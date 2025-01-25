@@ -3,8 +3,19 @@ import { invoke } from "@tauri-apps/api/core";
 
 interface Notification {
   message: string;
-  type: string;
+  notification_type: string;
   duration?: number;
+}
+
+interface DomUpdate {
+  html: string;
+  target: string;
+  action: string;
+}
+
+interface TaskResponse {
+  updates: DomUpdate[];
+  notification?: Notification;
 }
 
 interface PageResponse {
@@ -32,7 +43,7 @@ function showNotification(notification: Notification) {
       );
       
       // Add new color classes
-      if (notification.type === 'error') {
+      if (notification.notification_type === 'error') {
         container.classList.add('bg-red-100', 'border-red-500', 'text-red-700');
       } else {
         container.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
@@ -54,41 +65,65 @@ function showNotification(notification: Notification) {
   }
 }
 
+function applyDomUpdates(updates: DomUpdate[]) {
+  updates.forEach(update => {
+    const target = document.querySelector(update.target);
+    if (!target) {
+      console.error(`Target element ${update.target} not found`);
+      return;
+    }
+
+    switch (update.action) {
+      case 'replace':
+        target.innerHTML = update.html;
+        break;
+      case 'append':
+        target.insertAdjacentHTML('beforeend', update.html);
+        break;
+      case 'prepend':
+        target.insertAdjacentHTML('afterbegin', update.html);
+        break;
+      default:
+        console.error(`Unknown DOM update action: ${update.action}`);
+    }
+  });
+}
+
 async function loadIndex() {
   if (appRoot) {
     const response = await invoke<PageResponse>("index");
     appRoot.innerHTML = response.html;
+    if (response.notification) {
+      showNotification(response.notification);
+    }
   }
 }
 
 async function addTask(event: Event) {
   event.preventDefault();
-  const titleInput = document.querySelector<HTMLInputElement>("#task-title");
-  const descInput = document.querySelector<HTMLTextAreaElement>("#task-description");
-  
-  if (!titleInput) return;
-  
+  const form = event.target as HTMLFormElement;
+  const formData = new FormData(form);
+  const title = formData.get('title') as string;
+
+  if (!title) return;
+
   try {
-    const response = await invoke<PageResponse>("push_task", {
-      title: titleInput.value,
-      description: descInput?.value || null
-    });
+    const response = await invoke<TaskResponse>('add_task', { title });
     
-    // Reset form
-    titleInput.value = "";
-    if (descInput) descInput.value = "";
-    
-    // Update page content
-    appRoot!.innerHTML = response.html;
+    // Apply DOM updates
+    applyDomUpdates(response.updates);
     
     // Show notification if present
     if (response.notification) {
       showNotification(response.notification);
     }
+    
+    // Reset form
+    form.reset();
   } catch (error) {
     showNotification({
-      message: `Error adding task: ${error}`,
-      type: 'error',
+      message: error as string,
+      notification_type: 'error',
       duration: 5000
     });
   }
@@ -96,10 +131,10 @@ async function addTask(event: Event) {
 
 async function completeTask() {
   try {
-    const response = await invoke<PageResponse>("complete_top_task");
+    const response = await invoke<TaskResponse>('complete_task');
     
-    // Update page content
-    appRoot!.innerHTML = response.html;
+    // Apply DOM updates
+    applyDomUpdates(response.updates);
     
     // Show notification if present
     if (response.notification) {
@@ -107,8 +142,8 @@ async function completeTask() {
     }
   } catch (error) {
     showNotification({
-      message: `Error completing task: ${error}`,
-      type: 'error',
+      message: error as string,
+      notification_type: 'error',
       duration: 5000
     });
   }

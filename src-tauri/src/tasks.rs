@@ -12,6 +12,14 @@ pub struct Task {
 }
 
 impl Task {
+    pub fn new(title: String) -> Self {
+        Self {
+            title,
+            description: None,
+            created_at: chrono::Utc::now(),
+        }
+    }
+
     pub fn title(&self) -> &str {
         &self.title
     }
@@ -31,6 +39,25 @@ impl TaskStack {
     pub fn new() -> Self {
         Self(Mutex::new(Vec::new()))
     }
+
+    pub fn push(&self, task: Task) {
+        let mut tasks = self.0.lock().unwrap();
+        tasks.push(task);
+    }
+
+    pub fn pop(&self) -> Option<Task> {
+        let mut tasks = self.0.lock().unwrap();
+        if tasks.is_empty() {
+            None
+        } else {
+            Some(tasks.remove(0))
+        }
+    }
+
+    pub fn first(&self) -> Option<Task> {
+        let tasks = self.0.lock().unwrap();
+        tasks.first().cloned()
+    }
 }
 
 #[tauri::command]
@@ -45,11 +72,9 @@ pub fn push_task(
         created_at: chrono::Utc::now(),
     };
 
-    let mut tasks = stack.0.lock().map_err(|e| e.to_string())?;
-    tasks.push(task);
-    let position = tasks.len();
-    drop(tasks);
-
+    stack.push(task);
+    let position = stack.first().map(|_| 1).unwrap_or(0) + 1;
+    
     let base_response = routes::index(stack)?;
     
     Ok(PageResponse::with_notification(
@@ -64,27 +89,21 @@ pub fn push_task(
 
 #[tauri::command]
 pub fn complete_top_task(stack: State<TaskStack>) -> Result<PageResponse, String> {
-    let mut tasks = stack.0.lock().map_err(|e| e.to_string())?;
-    
-    if tasks.is_empty() {
-        return Err("No tasks to complete".to_string());
+    if let Some(_) = stack.pop() {
+        let base_response = routes::index(stack)?;
+        
+        Ok(PageResponse::with_notification(
+            base_response.html,
+            "Task completed! Great work! 🎉".to_string(),
+            "success",
+            None,
+        ))
+    } else {
+        Err("No tasks to complete".to_string())
     }
-    
-    tasks.remove(0);
-    drop(tasks);
-    
-    let base_response = routes::index(stack)?;
-    
-    Ok(PageResponse::with_notification(
-        base_response.html,
-        "Task completed! Great work! 🎉".to_string(),
-        "success",
-        None,
-    ))
 }
 
 #[tauri::command]
 pub fn get_top_task(stack: State<TaskStack>) -> Result<Option<Task>, String> {
-    let tasks = stack.0.lock().map_err(|e| e.to_string())?;
-    Ok(tasks.first().cloned())
+    Ok(stack.first())
 }

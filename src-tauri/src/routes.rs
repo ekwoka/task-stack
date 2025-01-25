@@ -1,12 +1,13 @@
-use crate::tasks::TaskStack;
-use crate::types::PageResponse;
-use html_node::{html, text};
+use crate::tasks::{Task, TaskStack};
+use crate::types::{Notification, PageResponse};
+use html_node::{html, text, Node};
+use serde::Serialize;
 use tauri::State;
 
 /// Renders the index page HTML
 #[tauri::command]
 pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
-    let top_task = stack.0.lock().map_err(|e| e.to_string())?.first().cloned();
+    let top_task = stack.first();
 
     let html = format!(
         "{:#}",
@@ -34,64 +35,34 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
                         </header>
                         <main class="space-y-8">
                             <div class="bg-white rounded-xl shadow-sm p-6">
-                                {
-                                    if let Some(task) = top_task {
-                                        html! {
-                                            <div>
-                                                <h2 class="text-xl font-semibold text-gray-900 mb-4">{ text!("Current Task") }</h2>
-                                                <div class="bg-gray-50 rounded-lg p-6">
-                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">{ text!("{}", task.title) }</h3>
-                                                    {
-                                                        if let Some(desc) = task.description {
-                                                            html! { <p class="text-gray-600 mb-6">{ text!("{}", desc) }</p> }
-                                                        } else {
-                                                            html! {}
-                                                        }
-                                                    }
-                                                    <button
-                                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                                                        onclick="window.completeTask()"
-                                                    >
-                                                        { text!("Complete Task") }
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        }
-                                    } else {
-                                        html! {
-                                            <div class="text-center py-12">
-                                                <p class="text-gray-600">{ text!("No tasks in the queue") }</p>
-                                            </div>
-                                        }
-                                    }
-                                }
-                            </div>
-                            <div class="bg-white rounded-xl shadow-sm p-6">
-                                <h2 class="text-xl font-semibold text-gray-900 mb-4">{ text!("Add New Task") }</h2>
-                                <form id="task-form" class="space-y-4" onsubmit="window.addTask(event)">
-                                    <div>
+                                <form id="task-form" onsubmit="addTask(event)" class="mb-8">
+                                    <div class="mb-4">
+                                        <label for="title" class="block text-sm font-medium text-gray-700">Task Title</label>
                                         <input
                                             type="text"
-                                            id="task-title"
-                                            placeholder="Task title"
+                                            name="title"
+                                            id="title"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                             required
-                                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
-                                    </div>
-                                    <div>
-                                        <textarea
-                                            id="task-description"
-                                            placeholder="Task description (optional)"
-                                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
-                                        ></textarea>
                                     </div>
                                     <button
                                         type="submit"
-                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                     >
                                         { text!("Add Task") }
                                     </button>
                                 </form>
+                                <div id="current-task">
+                                    <h2 class="text-xl font-semibold text-gray-900 mb-4">{ text!("Current Task") }</h2>
+                                    {
+                                        if let Some(task) = top_task {
+                                            render_task(&task)
+                                        } else {
+                                            render_empty_state()
+                                        }
+                                    }
+                                </div>
                             </div>
                         </main>
                     </div>
@@ -101,4 +72,93 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
     );
 
     Ok(PageResponse::new(html))
+}
+
+#[derive(Serialize)]
+pub struct DomUpdate {
+    pub html: String,
+    pub target: String,
+    pub action: String,
+}
+
+#[derive(Serialize)]
+pub struct TaskResponse {
+    pub updates: Vec<DomUpdate>,
+    pub notification: Option<Notification>,
+}
+
+fn render_task(task: &Task) -> Node {
+    html! {
+        <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">{ text!("{}", task.title) }</h3>
+            <button
+                onclick="completeTask()"
+                class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+                { text!("Complete Task") }
+            </button>
+        </div>
+    }
+}
+
+fn render_empty_state() -> Node {
+    html! {
+        <div class="text-center py-8">
+            <p class="text-gray-500">{ text!("No tasks in the queue") }</p>
+        </div>
+    }
+}
+
+#[tauri::command]
+pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, String> {
+    stack.push(Task::new(title));
+    
+    let mut updates = Vec::new();
+    
+    if let Some(top_task) = stack.first() {
+        updates.push(DomUpdate {
+            html: render_task(&top_task).to_string(),
+            target: "#current-task".to_string(),
+            action: "replace".to_string(),
+        });
+    }
+    
+    Ok(TaskResponse {
+        updates,
+        notification: Some(Notification {
+            message: "Task added successfully".to_string(),
+            notification_type: "success".to_string(),
+            duration: Some(3000),
+        }),
+    })
+}
+
+#[tauri::command]
+pub fn complete_task(stack: State<TaskStack>) -> Result<TaskResponse, String> {
+    stack.pop();
+    
+    let mut updates = Vec::new();
+    
+    if let Some(top_task) = stack.first() {
+        updates.push(DomUpdate {
+            html: render_task(&top_task).to_string(),
+            target: "#current-task".to_string(),
+            action: "replace".to_string(),
+        });
+    } else {
+        updates.push(DomUpdate {
+            html: render_empty_state().to_string(),
+            target: "#current-task".to_string(),
+            action: "replace".to_string(),
+        });
+    }
+    
+    Ok(TaskResponse {
+        updates,
+        notification: Some(Notification {
+            message: "Task completed".to_string(),
+            notification_type: "success".to_string(),
+            duration: Some(3000),
+        }),
+    })
 }
