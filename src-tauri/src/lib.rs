@@ -1,37 +1,25 @@
-use html_node::{html, text};
+pub mod routes;
+pub mod tasks;
+pub mod types;
 
-mod routes;
-mod tasks;
-
-use routes::*;
-use tasks::*;
-
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!(
-        "{:#}",
-        html! {
-          <div>
-            <h1>{ text!("Hello, {}!", name) }</h1>
-          </div>
-        }
-    )
-}
+// Re-export the task stack for use in main.rs
+pub use tasks::TaskStack;
+use routes::index;
+use tasks::{push_task, complete_top_task};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let task_stack = TaskStack::new();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
+        .setup(|_app| {
+            Ok(())
+        })
         .manage(task_stack)
         .invoke_handler(tauri::generate_handler![
-            greet,
             index,
             push_task,
             complete_top_task,
-            get_top_task
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
