@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import 'tailwindcss/theme';
+
+/* Tailwind plugins */
+@plugin '@tailwindcss/typography';
+@plugin '@tailwindcss/forms';
+
+/* Setup Sources */
+
+@source "../src-tauri";
+
+
+/* Tailwind Config */
+@theme {
+  --font-brand: var(--font-sans);
+}
+
+
+@layer base {
+  sr-only {
+    @apply sr-only;
+  }
+}
