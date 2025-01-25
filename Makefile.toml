@@ -1,0 +1,34 @@
+[config]
+default_to_workspace = false
+load_cargo_aliases = true
+
+[tasks.default]
+alias = "build"
+
+[tasks.watch]
+script = "cargo watch -x clippy -x 'fmt --all' -x nextest"
+
+[tasks.fmt]
+command = "cargo"
+args = ["fmt", "--all"]
+
+[tasks.dev]
+run_task = { name = ["watch", "serve"], parallel = true }
+
+[tasks.serve]
+command = "cargo"
+args = ["tauri", "dev"]
+
+[tasks.precommit]
+dependencies = ["clippy", "fmt", "nextest"]
+
+[tasks.build]
+condition = { files_modified = { input = [
+  "./Cargo.*",
+  "./**/*.rs",
+], output = [
+  "./target/release/task-stack",
+] } }
+command = "cargo"
+args = ["tauri", "build"]
+dependencies = ["clippy", "fmt", "nextest"]

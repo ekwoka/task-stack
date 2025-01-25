@@ -1,0 +1,42 @@
+{
+  "name": "task-stack",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+
+  "mounts": [
+    {
+      "source": "task-stack-cargo-cache-${devcontainerId}",
+      "target": "/usr/local/cargo",
+      "type": "volume"
+    },
+    {
+      "source": "task-stack-target-cache-${devcontainerId}",
+      "target": "/workspaces/task-stack/target",
+      "type": "volume"
+    },
+    {
+      "source": "task-stack-bin-cache-${devcontainerId}",
+      "target": "/workspaces/task-stack/.bin",
+      "type": "volume"
+    }
+  ],
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "lldb.executable": "/usr/bin/lldb",
+        "files.watcherExclude": {
+          "**/target/**": true
+        },
+        "rust-analyzer.checkOnSave.command": "clippy"
+      },
+
+      "extensions": ["vadimcn.vscode-lldb", "mutantdino.resourcemonitor", "rust-lang.rust-analyzer", "tamasfe.even-better-toml", "serayuzgur.crates", "tauri-apps.tauri-vscode"]
+    }
+  },
+
+  "postStartCommand": "pnpm i",
+
+  "remoteUser": "root"
+}

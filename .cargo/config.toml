@@ -1,0 +1,5 @@
+[alias]
+make = ["bin", "cargo-make"]
+nextest = ["bin", "cargo-nextest", "run", "--workspace"]
+tauri = ["bin", "cargo-tauri"]
+watch = ["bin", "cargo-watch"]
