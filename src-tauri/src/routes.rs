@@ -56,7 +56,7 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
                                     <h2 class="text-xl font-semibold text-gray-900 mb-4">{ text!("Current Task") }</h2>
                                     {
                                         if let Some(task) = top_task {
-                                            render_task(&task)
+                                            render_task(&task, &stack)
                                         } else {
                                             render_empty_state()
                                         }
@@ -77,16 +77,38 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
     }))
 }
 
-fn render_task(task: &Task) -> Node {
+fn render_task(task: &Task, stack: &TaskStack) -> Node {
+    let current_pos = stack.position_of(task);
+    let total_tasks = stack.size();
+    let remaining_tasks = total_tasks - current_pos;
+
     html! {
-        <div class="bg-gray-50 rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">{ text!("{}", task.title) }</h3>
-            <button
-                onclick="completeTask()"
-                class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-                { text!("Complete Task") }
-            </button>
+        <div class="relative">
+            {
+                (1..=3.min(remaining_tasks)).rev().map(|i| {
+                    let offset = i * 8; // Adjusted to use 8px spacing
+                    let width_adjustment = i * 4; // Decrease width by 4px per step
+                    let opacity = 90 - (i - 1) * 15;
+                    html! {
+                        <div class="absolute bg-white rounded-lg border border-gray-200 h-16 shadow-sm"
+                          style={format!("bottom: -{offset}px; opacity: {opacity}; left: {width_adjustment}px; right: {width_adjustment}px;")}></div>
+                    }
+                }).collect::<Vec<_>>()
+            }
+            <div class="bg-white rounded-lg p-6 relative border border-gray-200 shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-medium text-gray-900">{ text!("{}", task.title) }</h3>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        { text!("Task {} of {}", current_pos, total_tasks) }
+                    </span>
+                </div>
+                <button
+                    onclick="completeTask()"
+                    class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    { text!("Complete Task") }
+                </button>
+            </div>
         </div>
     }
 }
@@ -107,7 +129,7 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<PageResponse, 
 
     if let Some(top_task) = stack.first() {
         updates.push(DomUpdate {
-            html: render_task(&top_task).to_string(),
+            html: render_task(&top_task, &stack).to_string(),
             target: "#current-task".to_string(),
             action: "replace".to_string(),
         });
@@ -131,7 +153,7 @@ pub fn complete_task(stack: State<TaskStack>) -> Result<PageResponse, String> {
 
     if let Some(top_task) = stack.first() {
         updates.push(DomUpdate {
-            html: render_task(&top_task).to_string(),
+            html: render_task(&top_task, &stack).to_string(),
             target: "#current-task".to_string(),
             action: "replace".to_string(),
         });

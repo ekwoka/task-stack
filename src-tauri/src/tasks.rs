@@ -58,6 +58,20 @@ impl TaskStack {
         let tasks = self.0.lock().unwrap();
         tasks.first().cloned()
     }
+
+    pub fn size(&self) -> usize {
+        let tasks = self.0.lock().unwrap();
+        tasks.len()
+    }
+
+    pub fn position_of(&self, task: &Task) -> usize {
+        let tasks = self.0.lock().unwrap();
+        tasks
+            .iter()
+            .position(|t| t.created_at == task.created_at)
+            .map(|pos| pos + 1)
+            .unwrap_or(1)
+    }
 }
 
 impl Default for TaskStack {
