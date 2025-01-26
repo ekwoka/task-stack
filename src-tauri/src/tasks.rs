@@ -84,7 +84,7 @@ pub fn push_task(
     let base_response = routes::index(stack)?;
 
     Ok(PageResponse::with_notification(
-        base_response.html,
+        base_response.updates.first().unwrap().clone(),
         format!(
             "Task added! It's {} in the queue.",
             if position == 1 {
@@ -104,7 +104,7 @@ pub fn complete_top_task(stack: State<TaskStack>) -> Result<PageResponse, String
         let base_response = routes::index(stack)?;
 
         Ok(PageResponse::with_notification(
-            base_response.html,
+            base_response.updates.first().unwrap().clone(),
             "Task completed! Great work! 🎉".to_string(),
             "success",
             None,

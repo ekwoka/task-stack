@@ -1,7 +1,6 @@
 use crate::tasks::{Task, TaskStack};
-use crate::types::{Notification, PageResponse};
+use crate::types::{DomUpdate, Notification, PageResponse};
 use html_node::{html, text, Node};
-use serde::Serialize;
 use tauri::State;
 
 /// Renders the index page HTML
@@ -30,7 +29,7 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
                 <div class="min-h-screen bg-gray-50 py-8">
                     <div class="max-w-3xl mx-auto px-4">
                         <header class="text-center mb-12">
-                            <h1 class="text-4xl font-bold text-gray-900">{ text!("Task Queue") }</h1>
+                            <h1 class="text-4xl font-bold text-gray-900">{ text!("Task Stack") }</h1>
                             <p class="mt-2 text-gray-600">{ text!("Focus on one task at a time, in the order they were added") }</p>
                         </header>
                         <main class="space-y-8">
@@ -71,20 +70,11 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
         }
     );
 
-    Ok(PageResponse::new(html))
-}
-
-#[derive(Serialize)]
-pub struct DomUpdate {
-    pub html: String,
-    pub target: String,
-    pub action: String,
-}
-
-#[derive(Serialize)]
-pub struct TaskResponse {
-    pub updates: Vec<DomUpdate>,
-    pub notification: Option<Notification>,
+    Ok(PageResponse::new(DomUpdate {
+        html,
+        target: "#app".to_string(),
+        action: "replace".to_string(),
+    }))
 }
 
 fn render_task(task: &Task) -> Node {
@@ -110,7 +100,7 @@ fn render_empty_state() -> Node {
 }
 
 #[tauri::command]
-pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, String> {
+pub fn add_task(title: String, stack: State<TaskStack>) -> Result<PageResponse, String> {
     stack.push(Task::new(title));
 
     let mut updates = Vec::new();
@@ -123,7 +113,7 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, 
         });
     }
 
-    Ok(TaskResponse {
+    Ok(PageResponse {
         updates,
         notification: Some(Notification {
             message: "Task added successfully".to_string(),
@@ -134,7 +124,7 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, 
 }
 
 #[tauri::command]
-pub fn complete_task(stack: State<TaskStack>) -> Result<TaskResponse, String> {
+pub fn complete_task(stack: State<TaskStack>) -> Result<PageResponse, String> {
     stack.pop();
 
     let mut updates = Vec::new();
@@ -153,7 +143,7 @@ pub fn complete_task(stack: State<TaskStack>) -> Result<TaskResponse, String> {
         });
     }
 
-    Ok(TaskResponse {
+    Ok(PageResponse {
         updates,
         notification: Some(Notification {
             message: "Task completed".to_string(),

@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Notification {
     pub message: String,
     #[serde(rename = "type")]
@@ -8,28 +8,35 @@ pub struct Notification {
     pub duration: Option<u32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct PageResponse {
-    pub html: String,
+    pub updates: Vec<DomUpdate>,
     pub notification: Option<Notification>,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct DomUpdate {
+    pub html: String,
+    pub target: String,
+    pub action: String,
+}
+
 impl PageResponse {
-    pub fn new(html: String) -> Self {
+    pub fn new(update: DomUpdate) -> Self {
         Self {
-            html,
+            updates: vec![update],
             notification: None,
         }
     }
 
     pub fn with_notification(
-        html: String,
+        update: DomUpdate,
         message: String,
         notification_type: &str,
         duration: Option<u32>,
     ) -> Self {
         Self {
-            html,
+            updates: vec![update],
             notification: Some(Notification {
                 message,
                 notification_type: notification_type.to_string(),
