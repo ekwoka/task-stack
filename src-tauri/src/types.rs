@@ -22,7 +22,12 @@ impl PageResponse {
         }
     }
 
-    pub fn with_notification(html: String, message: String, notification_type: &str, duration: Option<u32>) -> Self {
+    pub fn with_notification(
+        html: String,
+        message: String,
+        notification_type: &str,
+        duration: Option<u32>,
+    ) -> Self {
         Self {
             html,
             notification: Some(Notification {

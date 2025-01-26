@@ -112,9 +112,9 @@ fn render_empty_state() -> Node {
 #[tauri::command]
 pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, String> {
     stack.push(Task::new(title));
-    
+
     let mut updates = Vec::new();
-    
+
     if let Some(top_task) = stack.first() {
         updates.push(DomUpdate {
             html: render_task(&top_task).to_string(),
@@ -122,7 +122,7 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, 
             action: "replace".to_string(),
         });
     }
-    
+
     Ok(TaskResponse {
         updates,
         notification: Some(Notification {
@@ -136,9 +136,9 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<TaskResponse, 
 #[tauri::command]
 pub fn complete_task(stack: State<TaskStack>) -> Result<TaskResponse, String> {
     stack.pop();
-    
+
     let mut updates = Vec::new();
-    
+
     if let Some(top_task) = stack.first() {
         updates.push(DomUpdate {
             html: render_task(&top_task).to_string(),
@@ -152,7 +152,7 @@ pub fn complete_task(stack: State<TaskStack>) -> Result<TaskResponse, String> {
             action: "replace".to_string(),
         });
     }
-    
+
     Ok(TaskResponse {
         updates,
         notification: Some(Notification {

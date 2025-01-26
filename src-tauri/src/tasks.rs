@@ -1,8 +1,8 @@
+use crate::routes;
+use crate::types::PageResponse;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::State;
-use crate::types::PageResponse;
-use crate::routes;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
@@ -25,7 +25,7 @@ impl Task {
     }
 
     pub fn description(&self) -> Option<&str> {
-        self.description.as_ref().map(|s| s.as_str())
+        self.description.as_deref()
     }
 
     pub fn created_at(&self) -> &chrono::DateTime<chrono::Utc> {
@@ -60,6 +60,12 @@ impl TaskStack {
     }
 }
 
+impl Default for TaskStack {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[tauri::command]
 pub fn push_task(
     stack: State<TaskStack>,
@@ -74,13 +80,18 @@ pub fn push_task(
 
     stack.push(task);
     let position = stack.first().map(|_| 1).unwrap_or(0) + 1;
-    
+
     let base_response = routes::index(stack)?;
-    
+
     Ok(PageResponse::with_notification(
         base_response.html,
-        format!("Task added! It's {} in the queue.", 
-            if position == 1 { "next".to_string() } else { format!("#{}", position) }
+        format!(
+            "Task added! It's {} in the queue.",
+            if position == 1 {
+                "next".to_string()
+            } else {
+                format!("#{}", position)
+            }
         ),
         "success",
         None,
@@ -89,9 +100,9 @@ pub fn push_task(
 
 #[tauri::command]
 pub fn complete_top_task(stack: State<TaskStack>) -> Result<PageResponse, String> {
-    if let Some(_) = stack.pop() {
+    if let Some(_top_task) = stack.pop() {
         let base_response = routes::index(stack)?;
-        
+
         Ok(PageResponse::with_notification(
             base_response.html,
             "Task completed! Great work! 🎉".to_string(),
