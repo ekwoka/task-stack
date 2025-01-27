@@ -1,5 +1,4 @@
-use crate::routes;
-use crate::types::PageResponse;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::State;
@@ -8,7 +7,7 @@ use tauri::State;
 pub struct Task {
     pub title: String,
     pub description: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: DateTime<Utc>,
 }
 
 impl Task {
@@ -16,7 +15,7 @@ impl Task {
         Self {
             title,
             description: None,
-            created_at: chrono::Utc::now(),
+            created_at: Utc::now(),
         }
     }
 
@@ -28,25 +27,29 @@ impl Task {
         self.description.as_deref()
     }
 
-    pub fn created_at(&self) -> &chrono::DateTime<chrono::Utc> {
+    pub fn created_at(&self) -> &DateTime<Utc> {
         &self.created_at
     }
 }
 
-pub struct TaskStack(pub Mutex<Vec<Task>>);
+pub struct TaskStack {
+    tasks: Mutex<Vec<Task>>,
+}
 
 impl TaskStack {
     pub fn new() -> Self {
-        Self(Mutex::new(Vec::new()))
+        Self {
+            tasks: Mutex::new(Vec::new()),
+        }
     }
 
     pub fn push(&self, task: Task) {
-        let mut tasks = self.0.lock().unwrap();
+        let mut tasks = self.tasks.lock().unwrap();
         tasks.push(task);
     }
 
     pub fn pop(&self) -> Option<Task> {
-        let mut tasks = self.0.lock().unwrap();
+        let mut tasks = self.tasks.lock().unwrap();
         if tasks.is_empty() {
             None
         } else {
@@ -55,22 +58,18 @@ impl TaskStack {
     }
 
     pub fn first(&self) -> Option<Task> {
-        let tasks = self.0.lock().unwrap();
+        let tasks = self.tasks.lock().unwrap();
         tasks.first().cloned()
     }
 
     pub fn size(&self) -> usize {
-        let tasks = self.0.lock().unwrap();
+        let tasks = self.tasks.lock().unwrap();
         tasks.len()
     }
 
-    pub fn position_of(&self, task: &Task) -> usize {
-        let tasks = self.0.lock().unwrap();
-        tasks
-            .iter()
-            .position(|t| t.created_at == task.created_at)
-            .map(|pos| pos + 1)
-            .unwrap_or(1)
+    pub fn find_task_position(&self, task: &Task) -> Option<usize> {
+        let tasks = self.tasks.lock().unwrap();
+        tasks.iter().position(|t| t.created_at == task.created_at)
     }
 }
 
@@ -85,44 +84,31 @@ pub fn push_task(
     stack: State<TaskStack>,
     title: String,
     description: Option<String>,
-) -> Result<PageResponse, String> {
+) -> Result<(), String> {
     let task = Task {
         title,
         description,
-        created_at: chrono::Utc::now(),
+        created_at: Utc::now(),
     };
 
-    stack.push(task);
-    let position = stack.first().map(|_| 1).unwrap_or(0) + 1;
-
-    let base_response = routes::index(stack)?;
-
-    Ok(PageResponse::with_notification(
-        base_response.updates.first().unwrap().clone(),
-        format!(
-            "Task added! It's {} in the queue.",
-            if position == 1 {
-                "next".to_string()
-            } else {
-                format!("#{}", position)
-            }
-        ),
-        "success",
-        None,
-    ))
+    let task_clone = task.clone();
+    stack.push(task_clone);
+    let position = stack.find_task_position(&task).unwrap_or(0) + 1;
+    println!(
+        "Task added! It's {} in the queue.",
+        if position == 1 {
+            "next".to_string()
+        } else {
+            format!("#{}", position)
+        }
+    );
+    Ok(())
 }
 
 #[tauri::command]
-pub fn complete_top_task(stack: State<TaskStack>) -> Result<PageResponse, String> {
+pub fn complete_top_task(stack: State<TaskStack>) -> Result<(), String> {
     if let Some(_top_task) = stack.pop() {
-        let base_response = routes::index(stack)?;
-
-        Ok(PageResponse::with_notification(
-            base_response.updates.first().unwrap().clone(),
-            "Task completed! Great work! 🎉".to_string(),
-            "success",
-            None,
-        ))
+        Ok(())
     } else {
         Err("No tasks to complete".to_string())
     }

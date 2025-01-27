@@ -16,4 +16,4 @@ strip = true      # Ensures debug symbols are removed.
 cargo-make = { version = "0.37.24" }
 cargo-nextest = { version = "0.9.88" }
 cargo-watch = { version = "8.5.3" }
-tauri-cli = { version = "2.2.5", bins = ["cargo-tauri"] }
+tauri-cli = { version = "2.2.7", bins = ["cargo-tauri"] }
