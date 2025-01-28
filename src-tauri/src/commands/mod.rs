@@ -34,18 +34,16 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<PageResponse, 
 }
 
 #[tauri::command]
-pub fn complete_task(stack: State<TaskStack>) -> Result<PageResponse, String> {
-    if let Some(task) = stack.pop() {
-        let html = format!("{:#}", render_index_page(&stack));
-        Ok(PageResponse {
-            updates: vec![DomUpdate {
-                target: "#app".to_string(),
-                action: "replace".to_string(),
-                html,
-            }],
-            notification: None,
-        })
-    } else {
-        Err("No tasks to complete".to_string())
-    }
+pub fn complete_task(stack: State<TaskStack>, id: ulid::Ulid) -> Result<PageResponse, String> {
+    stack.remove_task(id)?;
+
+    let html = format!("{:#}", render_index_page(&stack));
+    Ok(PageResponse {
+        updates: vec![DomUpdate {
+            target: "#app".to_string(),
+            action: "replace".to_string(),
+            html,
+        }],
+        notification: None,
+    })
 }

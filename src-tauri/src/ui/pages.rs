@@ -13,7 +13,12 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                 </header>
                 <main class="space-y-8">
                     <div class="bg-white rounded-xl shadow-sm p-6" style={format!("padding-bottom: {}px;", 3.min(stack.size().saturating_sub(1)) * 2 + 24)}>
-                        <form id="task-form" onsubmit="addTask(event)" class="mb-8">
+                        <form
+                            id="task-form"
+                            data-command="add_task"
+                            data-trigger="submit"
+                            class="mb-8"
+                        >
                             <div class="mb-4">
                                 <label for="title" class="block text-sm font-medium text-gray-700">Task Title</label>
                                 <input

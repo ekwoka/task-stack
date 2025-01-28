@@ -2,9 +2,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::State;
+use ulid::Ulid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
+    pub id: Ulid,
     pub title: String,
     pub description: Option<String>,
     pub created_at: DateTime<Utc>,
@@ -13,6 +15,7 @@ pub struct Task {
 impl Task {
     pub fn new(title: String) -> Self {
         Self {
+            id: Ulid::new(),
             title,
             description: None,
             created_at: Utc::now(),
@@ -69,7 +72,20 @@ impl TaskStack {
 
     pub fn find_task_position(&self, task: &Task) -> Option<usize> {
         let tasks = self.tasks.lock().unwrap();
-        tasks.iter().position(|t| t.created_at == task.created_at)
+        tasks.iter().position(|t| t.id == task.id)
+    }
+
+    pub fn remove_task(&self, id: Ulid) -> Result<Task, String> {
+        let mut tasks = self.tasks.lock().unwrap();
+        if let Some(pos) = tasks.iter().position(|t| t.id == id) {
+            if pos == 0 {
+                Ok(tasks.remove(0))
+            } else {
+                Err("Can only remove the top task".to_string())
+            }
+        } else {
+            Err("Task not found".to_string())
+        }
     }
 }
 
@@ -86,6 +102,7 @@ pub fn push_task(
     description: Option<String>,
 ) -> Result<(), String> {
     let task = Task {
+        id: Ulid::new(),
         title,
         description,
         created_at: Utc::now(),
@@ -103,15 +120,6 @@ pub fn push_task(
         }
     );
     Ok(())
-}
-
-#[tauri::command]
-pub fn complete_top_task(stack: State<TaskStack>) -> Result<(), String> {
-    if let Some(_top_task) = stack.pop() {
-        Ok(())
-    } else {
-        Err("No tasks to complete".to_string())
-    }
 }
 
 #[tauri::command]
