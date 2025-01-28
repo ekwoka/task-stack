@@ -12,7 +12,7 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                     <p class="mt-2 text-gray-600">{ text!("Focus on one task at a time, in the order they were added") }</p>
                 </header>
                 <main class="space-y-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6" style={format!("padding-bottom: {}px;", 3.min(stack.size().saturating_sub(1)) * 2 + 24)}>
                         <form id="task-form" onsubmit="addTask(event)" class="mb-8">
                             <div class="mb-4">
                                 <label for="title" class="block text-sm font-medium text-gray-700">Task Title</label>

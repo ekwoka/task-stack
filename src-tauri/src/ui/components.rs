@@ -11,10 +11,9 @@ pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
               (1..=3.min(remaining_tasks)).rev().map(|i| {
                   let offset = i * 8;
                   let width_adjustment = i * 4;
-                  let opacity = 90 - (i - 1) * 15;
                   html! {
                       <div class="absolute bg-white rounded-lg border border-gray-200 h-16 shadow-sm"
-                        style={format!("bottom: -{offset}px; opacity: {opacity}; left: {width_adjustment}px; right: {width_adjustment}px;")}></div>
+                        style={format!("bottom: -{offset}px; left: {width_adjustment}px; right: {width_adjustment}px;")}></div>
                   }
               }).collect::<Vec<_>>()
           }
