@@ -19,7 +19,10 @@ pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
           }
           <div class="bg-white rounded-lg p-6 relative border border-gray-200 shadow-sm">
               <div class="flex justify-between items-start mb-2">
-                  <h3 class="text-lg font-medium text-gray-900">{ text!("{}", task.title) }</h3>
+                  <div class="flex flex-col gap-1">
+                    <h3 class="text-lg font-medium text-gray-900">{ text!("{}", task.title) }</h3>
+                    <span class="text-xs text-gray-400">{ text!("#{}", task.id) }</span>
+                  </div>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                       { text!("Task {} of {}", current_pos, total_tasks) }
                   </span>

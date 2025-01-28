@@ -9,7 +9,14 @@ const directives = new Map<string, DirectiveHandler>();
 directives.set("command", (el: HTMLElement) => {
   const { trigger = 'click' } = el.dataset;
   console.log('hooking up directive', el, trigger);
+  
+  // Always set up the event listener
   el.addEventListener(trigger, commandHandler);
+  
+  // If trigger is 'now', dispatch the event immediately
+  if (trigger === 'now') {
+    el.dispatchEvent(new Event(trigger, { cancelable: true }));
+  }
 });
 
 const commandHandler = async (event: Event) => {
