@@ -5,15 +5,11 @@ use tauri::State;
 
 #[tauri::command]
 pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
-    let html = format!("{:#}", render_index_page(&stack));
-    Ok(PageResponse {
-        updates: vec![DomUpdate {
-            target: "#app".to_string(),
-            action: "replace".to_string(),
-            html,
-        }],
-        notification: None,
-    })
+    Ok(PageResponse::new(DomUpdate::from(
+        render_index_page(&stack),
+        "#app",
+        "replace",
+    )))
 }
 
 #[tauri::command]
@@ -22,43 +18,31 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<PageResponse, 
     stack.push(task);
 
     // Return updated task list HTML
-    let html = format!("{:#}", render_index_page(&stack));
-    Ok(PageResponse {
-        updates: vec![DomUpdate {
-            target: "#app".to_string(),
-            action: "replace".to_string(),
-            html,
-        }],
-        notification: None,
-    })
+    Ok(PageResponse::new(DomUpdate::from(
+        render_index_page(&stack),
+        "#app",
+        "replace",
+    )))
 }
 
 #[tauri::command]
 pub fn complete_task(stack: State<TaskStack>, id: ulid::Ulid) -> Result<PageResponse, String> {
     stack.remove_task(id)?;
 
-    let html = format!("{:#}", render_index_page(&stack));
-    Ok(PageResponse {
-        updates: vec![DomUpdate {
-            target: "#app".to_string(),
-            action: "replace".to_string(),
-            html,
-        }],
-        notification: None,
-    })
+    Ok(PageResponse::new(DomUpdate::from(
+        render_index_page(&stack),
+        "#app",
+        "replace",
+    )))
 }
 
 #[tauri::command]
 pub fn move_task_to_end(stack: State<TaskStack>, id: ulid::Ulid) -> Result<PageResponse, String> {
     stack.move_to_end(id)?;
 
-    let html = format!("{:#}", render_index_page(&stack));
-    Ok(PageResponse {
-        updates: vec![DomUpdate {
-            target: "#app".to_string(),
-            action: "replace".to_string(),
-            html,
-        }],
-        notification: None,
-    })
+    Ok(PageResponse::new(DomUpdate::from(
+        render_index_page(&stack),
+        "#app",
+        "replace",
+    )))
 }

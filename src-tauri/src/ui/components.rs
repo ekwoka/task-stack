@@ -24,7 +24,7 @@ pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
                     <span class="text-xs text-gray-400">{ text!("#{}", task.id) }</span>
                   </div>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                      { text!("Task {} of {}", current_pos, total_tasks) }
+                      { text!("Task {current_pos} of {total_tasks}") }
                   </span>
               </div>
               <div class="flex gap-2">

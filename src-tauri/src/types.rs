@@ -21,6 +21,16 @@ pub struct DomUpdate {
     pub action: String,
 }
 
+impl DomUpdate {
+    pub fn from(node: html_node::Node, target: &str, action: &str) -> Self {
+        DomUpdate {
+            html: node.pretty().to_string(),
+            target: target.to_string(),
+            action: action.to_string(),
+        }
+    }
+}
+
 impl PageResponse {
     pub fn new(update: DomUpdate) -> Self {
         Self {
