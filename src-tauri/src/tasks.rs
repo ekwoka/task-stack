@@ -87,6 +87,17 @@ impl TaskStack {
             Err("Task not found".to_string())
         }
     }
+
+    pub fn move_to_end(&self, id: Ulid) -> Result<(), String> {
+        let mut tasks = self.tasks.lock().unwrap();
+        if let Some(pos) = tasks.iter().position(|t| t.id == id) {
+            let task = tasks.remove(pos);
+            tasks.push(task);
+            Ok(())
+        } else {
+            Err("Task not found".to_string())
+        }
+    }
 }
 
 impl Default for TaskStack {

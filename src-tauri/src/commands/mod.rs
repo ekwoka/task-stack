@@ -47,3 +47,18 @@ pub fn complete_task(stack: State<TaskStack>, id: ulid::Ulid) -> Result<PageResp
         notification: None,
     })
 }
+
+#[tauri::command]
+pub fn move_task_to_end(stack: State<TaskStack>, id: ulid::Ulid) -> Result<PageResponse, String> {
+    stack.move_to_end(id)?;
+
+    let html = format!("{:#}", render_index_page(&stack));
+    Ok(PageResponse {
+        updates: vec![DomUpdate {
+            target: "#app".to_string(),
+            action: "replace".to_string(),
+            html,
+        }],
+        notification: None,
+    })
+}

@@ -27,13 +27,22 @@ pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
                       { text!("Task {} of {}", current_pos, total_tasks) }
                   </span>
               </div>
-              <button
-                  data-command="complete_task"
-                  data-payload={format!("{{\"id\":\"{}\"}}", task.id)}
-                  class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                  { text!("Complete Task") }
-              </button>
+              <div class="flex gap-2">
+                  <button
+                      data-command="complete_task"
+                      data-payload={format!("{{\"id\":\"{}\"}}", task.id)}
+                      class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                      { text!("Complete Task") }
+                  </button>
+                  <button
+                      data-command="move_task_to_end"
+                      data-payload={format!("{{\"id\":\"{}\"}}", task.id)}
+                      class="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                      { text!("Move to End") }
+                  </button>
+              </div>
           </div>
       </div>
     }
