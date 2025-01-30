@@ -10,6 +10,8 @@ pub struct Task {
     pub title: String,
     pub description: Option<String>,
     pub created_at: DateTime<Utc>,
+    pub completed: bool,
+    pub completed_at: Option<DateTime<Utc>>,
 }
 
 impl Task {
@@ -19,6 +21,8 @@ impl Task {
             title,
             description: None,
             created_at: Utc::now(),
+            completed: false,
+            completed_at: None,
         }
     }
 
@@ -32,6 +36,19 @@ impl Task {
 
     pub fn created_at(&self) -> &DateTime<Utc> {
         &self.created_at
+    }
+
+    pub fn completed(&self) -> bool {
+        self.completed
+    }
+
+    pub fn completed_at(&self) -> Option<&DateTime<Utc>> {
+        self.completed_at.as_ref()
+    }
+
+    pub fn mark_completed(&mut self) {
+        self.completed = true;
+        self.completed_at = Some(Utc::now());
     }
 }
 
@@ -62,6 +79,13 @@ impl TaskStack {
 
     pub fn first(&self) -> Option<Task> {
         let tasks = self.tasks.lock().unwrap();
+        tasks.iter()
+            .find(|task| !task.completed)
+            .cloned()
+    }
+
+    pub fn first_task(&self) -> Option<Task> {
+        let tasks = self.tasks.lock().unwrap();
         tasks.first().cloned()
     }
 
@@ -75,13 +99,22 @@ impl TaskStack {
         tasks.iter().position(|t| t.id == task.id)
     }
 
-    pub fn remove_task(&self, id: Ulid) -> Result<Task, String> {
+    pub fn complete_task(&self, id: Ulid) -> Result<Task, String> {
         let mut tasks = self.tasks.lock().unwrap();
         if let Some(pos) = tasks.iter().position(|t| t.id == id) {
-            if pos == 0 {
-                Ok(tasks.remove(0))
-            } else {
-                Err("Can only remove the top task".to_string())
+            // Find position of first incomplete task
+            let first_incomplete = tasks.iter()
+                .position(|t| !t.completed);
+            
+            match first_incomplete {
+                Some(first_pos) if pos == first_pos => {
+                    let mut task = tasks[pos].clone();
+                    task.mark_completed();
+                    tasks[pos] = task.clone();
+                    Ok(task)
+                }
+                Some(_) => Err("Can only complete the first incomplete task".to_string()),
+                None => Err("No incomplete tasks remaining".to_string()),
             }
         } else {
             Err("Task not found".to_string())
@@ -117,6 +150,8 @@ pub fn push_task(
         title,
         description,
         created_at: Utc::now(),
+        completed: false,
+        completed_at: None,
     };
 
     let task_clone = task.clone();

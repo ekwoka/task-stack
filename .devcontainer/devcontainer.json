@@ -6,6 +6,11 @@
 
   "mounts": [
     {
+      "source": "/tmp/.X11-unix",
+      "target": "/tmp/.X11-unix",
+      "type": "bind"
+    },
+    {
       "source": "task-stack-cargo-cache-${devcontainerId}",
       "target": "/usr/local/cargo",
       "type": "volume"
@@ -34,6 +39,9 @@
 
       "extensions": ["vadimcn.vscode-lldb", "mutantdino.resourcemonitor", "rust-lang.rust-analyzer", "tamasfe.even-better-toml", "serayuzgur.crates", "tauri-apps.tauri-vscode"]
     }
+  },
+  "containerEnv": {
+    "DISPLAY": "${ip}:0"
   },
 
   "postStartCommand": "pnpm i",

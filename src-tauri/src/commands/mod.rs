@@ -27,7 +27,7 @@ pub fn add_task(title: String, stack: State<TaskStack>) -> Result<PageResponse, 
 
 #[tauri::command]
 pub fn complete_task(stack: State<TaskStack>, id: ulid::Ulid) -> Result<PageResponse, String> {
-    stack.remove_task(id)?;
+    stack.complete_task(id)?;
 
     Ok(PageResponse::new(DomUpdate::from(
         render_index_page(&stack),
