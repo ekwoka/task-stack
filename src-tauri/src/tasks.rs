@@ -4,13 +4,19 @@ use std::sync::Mutex;
 use tauri::State;
 use ulid::Ulid;
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub enum TaskState {
+    Active,
+    Completed,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     pub id: Ulid,
     pub title: String,
     pub description: Option<String>,
     pub created_at: DateTime<Utc>,
-    pub completed: bool,
+    pub state: TaskState,
     pub completed_at: Option<DateTime<Utc>>,
 }
 
@@ -21,7 +27,7 @@ impl Task {
             title,
             description: None,
             created_at: Utc::now(),
-            completed: false,
+            state: TaskState::Active,
             completed_at: None,
         }
     }
@@ -39,7 +45,7 @@ impl Task {
     }
 
     pub fn completed(&self) -> bool {
-        self.completed
+        self.state == TaskState::Completed
     }
 
     pub fn completed_at(&self) -> Option<&DateTime<Utc>> {
@@ -47,7 +53,7 @@ impl Task {
     }
 
     pub fn mark_completed(&mut self) {
-        self.completed = true;
+        self.state = TaskState::Completed;
         self.completed_at = Some(Utc::now());
     }
 }
@@ -80,7 +86,7 @@ impl TaskStack {
     pub fn first(&self) -> Option<Task> {
         let tasks = self.tasks.lock().unwrap();
         tasks.iter()
-            .find(|task| !task.completed)
+            .find(|task| task.state == TaskState::Active)
             .cloned()
     }
 
@@ -104,7 +110,7 @@ impl TaskStack {
         if let Some(pos) = tasks.iter().position(|t| t.id == id) {
             // Find position of first incomplete task
             let first_incomplete = tasks.iter()
-                .position(|t| !t.completed);
+                .position(|t| t.state == TaskState::Active);
             
             match first_incomplete {
                 Some(first_pos) if pos == first_pos => {
@@ -150,7 +156,7 @@ pub fn push_task(
         title,
         description,
         created_at: Utc::now(),
-        completed: false,
+        state: TaskState::Active,
         completed_at: None,
     };
 
