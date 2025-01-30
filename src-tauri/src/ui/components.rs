@@ -27,6 +27,15 @@ pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
                       { text!("Task {current_pos} of {total_tasks}") }
                   </span>
               </div>
+              {
+                  if let Some(description) = &task.description {
+                      html! {
+                          <p class="mt-2 text-sm text-gray-600">{ text!("{}", description) }</p>
+                      }
+                  } else {
+                      Node::default()
+                  }
+              }
               <div class="flex gap-2">
                   <button
                       data-command="complete_task"

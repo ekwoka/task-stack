@@ -9,10 +9,10 @@ const directives = new Map<string, DirectiveHandler>();
 directives.set("command", (el: HTMLElement) => {
   const { trigger = 'click' } = el.dataset;
   console.log('hooking up directive', el, trigger);
-  
+
   // Always set up the event listener
   el.addEventListener(trigger, commandHandler);
-  
+
   // If trigger is 'now', dispatch the event immediately
   if (trigger === 'now') {
     el.dispatchEvent(new Event(trigger, { cancelable: true }));
@@ -39,6 +39,7 @@ const commandHandler = async (event: Event) => {
     }
 
     const response = await invoke<PageResponse>(command, payload);
+    console.log('invoke response', response.updates[0].html);
     handlePageResponse(response);
 
     // Dispatch a custom event with the response
@@ -79,7 +80,7 @@ function initDirectivesForRoot(root: Element | Document) {
 // Initialize directives and set up mutation observer
 export function initDirectives() {
   console.log('setting up directive system');
-  
+
   // Initialize existing elements
   initDirectivesForRoot(document);
 

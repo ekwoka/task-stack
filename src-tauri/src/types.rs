@@ -24,7 +24,7 @@ pub struct DomUpdate {
 impl DomUpdate {
     pub fn from(node: html_node::Node, target: &str, action: &str) -> Self {
         DomUpdate {
-            html: node.pretty().to_string(),
+            html: node.to_string(),
             target: target.to_string(),
             action: action.to_string(),
         }

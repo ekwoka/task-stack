@@ -13,8 +13,13 @@ pub fn index(stack: State<TaskStack>) -> Result<PageResponse, String> {
 }
 
 #[tauri::command]
-pub fn add_task(title: String, stack: State<TaskStack>) -> Result<PageResponse, String> {
-    let task = Task::new(title);
+pub fn add_task(title: String, description: Option<String>, stack: State<TaskStack>) -> Result<PageResponse, String> {
+    let mut task = Task::new(title);
+    if let Some(desc) = description {
+        if !desc.trim().is_empty() {
+            task.description = Some(desc);
+        }
+    }
     stack.push(task);
 
     // Return updated task list HTML

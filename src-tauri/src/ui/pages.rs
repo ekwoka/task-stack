@@ -29,6 +29,10 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                                     required
                                 />
                             </div>
+                            <div class="mb-4">
+                                <label for="description" class="block text-sm font-medium text-gray-700">{ text!("Description (optional)") }</label>
+                                <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Add any additional details about the task..."/>
+                            </div>
                             <button
                                 type="submit"
                                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
