@@ -85,7 +85,8 @@ impl TaskStack {
 
     pub fn first(&self) -> Option<Task> {
         let tasks = self.tasks.lock().unwrap();
-        tasks.iter()
+        tasks
+            .iter()
             .find(|task| task.state == TaskState::Active)
             .cloned()
     }
@@ -109,9 +110,8 @@ impl TaskStack {
         let mut tasks = self.tasks.lock().unwrap();
         if let Some(pos) = tasks.iter().position(|t| t.id == id) {
             // Find position of first incomplete task
-            let first_incomplete = tasks.iter()
-                .position(|t| t.state == TaskState::Active);
-            
+            let first_incomplete = tasks.iter().position(|t| t.state == TaskState::Active);
+
             match first_incomplete {
                 Some(first_pos) if pos == first_pos => {
                     let mut task = tasks[pos].clone();
