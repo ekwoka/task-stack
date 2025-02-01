@@ -15,6 +15,7 @@ tauri-build = { version = "2.0.5", features = [] }
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 html-node = { version = "0.5.0", features = ["pretty"] }
+libsql = "0.6.0"
 ron = "0.8.1"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
@@ -23,6 +24,7 @@ tauri-plugin-fs = "2.2.0"
 tauri-plugin-http = "2.3.0"
 tauri-plugin-opener = "2"
 tauri-plugin-shell = "2.2.0"
+tokio = { version = "1.43.0", features = ["rt", "rt-multi-thread"] }
 ulid = { version = "1.1.4", features = ["serde"] }
 
 [profile.dev]

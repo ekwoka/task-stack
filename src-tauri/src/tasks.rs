@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
-use tauri::State;
 use ulid::Ulid;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -60,38 +59,52 @@ impl Task {
 
 pub struct TaskStack {
     tasks: Mutex<Vec<Task>>,
+    db: libsql::Database,
 }
 
 impl TaskStack {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
+        let db_path = std::path::PathBuf::from("tasks.db");
+        let db = crate::database::init_database(&db_path)
+            .await
+            .expect("Failed to create database");
+        let tasks = crate::database::get_all_tasks(&db)
+            .await
+            .expect("Failed to load tasks")
+            .into_iter()
+            .map(|(task, _)| task)
+            .collect();
         Self {
-            tasks: Mutex::new(Vec::new()),
+            tasks: Mutex::new(tasks),
+            db,
         }
     }
 
-    pub fn push(&self, task: Task) {
+    pub async fn push(&self, task: Task) {
+        let position = {
+            let tasks = self.tasks.lock().unwrap();
+            (tasks.len() + 1) as i64
+        };
+        crate::database::insert_task(&self.db, &task, position)
+            .await
+            .expect("Failed to insert task");
         let mut tasks = self.tasks.lock().unwrap();
         tasks.push(task);
     }
 
-    pub fn pop(&self) -> Option<Task> {
+    pub async fn pop(&self) -> Option<Task> {
         let mut tasks = self.tasks.lock().unwrap();
-        if tasks.is_empty() {
-            None
+        if let Some(task) = tasks.pop() {
+            crate::database::delete_task(&self.db, &task.id)
+                .await
+                .expect("Failed to delete task");
+            Some(task)
         } else {
-            Some(tasks.remove(0))
+            None
         }
     }
 
     pub fn first(&self) -> Option<Task> {
-        let tasks = self.tasks.lock().unwrap();
-        tasks
-            .iter()
-            .find(|task| task.state == TaskState::Active)
-            .cloned()
-    }
-
-    pub fn first_task(&self) -> Option<Task> {
         let tasks = self.tasks.lock().unwrap();
         tasks.first().cloned()
     }
@@ -106,75 +119,69 @@ impl TaskStack {
         tasks.iter().position(|t| t.id == task.id)
     }
 
-    pub fn complete_task(&self, id: Ulid) -> Result<Task, String> {
-        let mut tasks = self.tasks.lock().unwrap();
-        if let Some(pos) = tasks.iter().position(|t| t.id == id) {
-            // Find position of first incomplete task
-            let first_incomplete = tasks.iter().position(|t| t.state == TaskState::Active);
-
-            match first_incomplete {
-                Some(first_pos) if pos == first_pos => {
-                    let mut task = tasks[pos].clone();
-                    task.mark_completed();
-                    tasks[pos] = task.clone();
-                    Ok(task)
-                }
-                Some(_) => Err("Can only complete the first incomplete task".to_string()),
-                None => Err("No incomplete tasks remaining".to_string()),
+    pub async fn complete_task(&self, id: Ulid) -> Result<Task, String> {
+        let task_update = {
+            let mut tasks = self.tasks.lock().unwrap();
+            if let Some(pos) = tasks.iter().position(|t| t.id == id) {
+                let mut task = tasks[pos].clone();
+                task.state = TaskState::Completed;
+                task.completed_at = Some(Utc::now());
+                tasks[pos] = task.clone();
+                Some(task)
+            } else {
+                None
             }
+        };
+
+        if let Some(task) = task_update {
+            crate::database::update_task_state(
+                &self.db,
+                &id,
+                TaskState::Completed,
+                Some(Utc::now()),
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+            Ok(task)
         } else {
             Err("Task not found".to_string())
         }
     }
 
-    pub fn move_to_end(&self, id: Ulid) -> Result<(), String> {
-        let mut tasks = self.tasks.lock().unwrap();
-        if let Some(pos) = tasks.iter().position(|t| t.id == id) {
-            let task = tasks.remove(pos);
-            tasks.push(task);
+    pub async fn move_to_end(&self, id: Ulid) -> Result<(), String> {
+        let task_to_move = {
+            let mut tasks = self.tasks.lock().unwrap();
+            if let Some(pos) = tasks.iter().position(|t| t.id == id) {
+                let task = tasks.remove(pos);
+                tasks.push(task.clone());
+                Some(task)
+            } else {
+                None
+            }
+        };
+
+        if let Some(_) = task_to_move {
+            let new_pos = {
+                let tasks = self.tasks.lock().unwrap();
+                tasks.len() as i64 - 1
+            };
+            crate::database::update_task_position(&self.db, &id, new_pos)
+                .await
+                .map_err(|e| e.to_string())?;
             Ok(())
         } else {
             Err("Task not found".to_string())
         }
     }
+
+    pub fn get_tasks(&self) -> Vec<Task> {
+        let tasks = self.tasks.lock().unwrap();
+        tasks.clone()
+    }
 }
 
 impl Default for TaskStack {
     fn default() -> Self {
-        Self::new()
+        todo!("Implement default for TaskStack")
     }
-}
-
-#[tauri::command]
-pub fn push_task(
-    stack: State<TaskStack>,
-    title: String,
-    description: Option<String>,
-) -> Result<(), String> {
-    let task = Task {
-        id: Ulid::new(),
-        title,
-        description,
-        created_at: Utc::now(),
-        state: TaskState::Active,
-        completed_at: None,
-    };
-
-    let task_clone = task.clone();
-    stack.push(task_clone);
-    let position = stack.find_task_position(&task).unwrap_or(0) + 1;
-    println!(
-        "Task added! It's {} in the queue.",
-        if position == 1 {
-            "next".to_string()
-        } else {
-            format!("#{}", position)
-        }
-    );
-    Ok(())
-}
-
-#[tauri::command]
-pub fn get_top_task(stack: State<TaskStack>) -> Result<Option<Task>, String> {
-    Ok(stack.first())
 }

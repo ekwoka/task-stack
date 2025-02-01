@@ -39,7 +39,7 @@ const commandHandler = async (event: Event) => {
     }
 
     const response = await invoke<PageResponse>(command, payload);
-    console.log('invoke response', response.updates[0].html);
+    console.log('invoke response', response);
     handlePageResponse(response);
 
     // Dispatch a custom event with the response

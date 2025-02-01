@@ -18,9 +18,14 @@ run_task = { name = ["watch", "serve"], parallel = true }
 [tasks.serve]
 command = "cargo"
 args = ["tauri", "dev"]
+dependencies = ["pnpm"]
 
 [tasks.precommit]
-dependencies = ["clippy", "fmt"]
+dependencies = ["clippy", "fmt", "pnpm"]
+
+[tasks.pnpm]
+command = "pnpm"
+args = ["i"]
 
 [tasks.build]
 condition = { files_modified = { input = [
@@ -31,4 +36,4 @@ condition = { files_modified = { input = [
 ] } }
 command = "cargo"
 args = ["tauri", "build"]
-dependencies = ["clippy", "fmt"]
+dependencies = ["clippy", "fmt", "pnpm"]
