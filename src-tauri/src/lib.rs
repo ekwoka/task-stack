@@ -35,5 +35,5 @@ pub fn run() {
             move_task_to_end,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("Task Stack to start correctly");
 }

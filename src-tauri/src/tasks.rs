@@ -93,8 +93,8 @@ impl TaskStack {
     }
 
     pub async fn pop(&self) -> Option<Task> {
-        let mut tasks = self.tasks.lock().unwrap();
-        if let Some(task) = tasks.pop() {
+        let task = self.tasks.lock().unwrap().pop();
+        if let Some(task) = task {
             crate::database::delete_task(&self.db, &task.id)
                 .await
                 .expect("Failed to delete task");
@@ -153,16 +153,16 @@ impl TaskStack {
             let mut tasks = self.tasks.lock().unwrap();
             if let Some(pos) = tasks.iter().position(|t| t.id == id) {
                 let task = tasks.remove(pos);
-                tasks.push(task.clone());
                 Some(task)
             } else {
                 None
             }
         };
 
-        if let Some(_) = task_to_move {
+        if let Some(task) = task_to_move {
             let new_pos = {
-                let tasks = self.tasks.lock().unwrap();
+                let mut tasks = self.tasks.lock().unwrap();
+                tasks.push(task);
                 tasks.len() as i64 - 1
             };
             crate::database::update_task_position(&self.db, &id, new_pos)
