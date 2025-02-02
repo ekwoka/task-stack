@@ -8,15 +8,26 @@ pub mod ui;
 pub use tasks::TaskStack;
 
 use commands::{add_task, complete_task, index, move_task_to_end};
-use tauri::Manager;
+use tauri::{path::BaseDirectory, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
+            let app_data_dir = app.path().app_data_dir().expect("App Data Dir to be Found");
+            std::fs::create_dir_all(&app_data_dir).expect("App Data Dir to be Created");
+
             let handle = app.handle();
+            let db_path = app
+                .path()
+                .resolve("tasks.db", BaseDirectory::AppData)
+                .expect("Path to be resolvable");
             tauri::async_runtime::block_on(async move {
-                let task_stack = TaskStack::new().await;
+                let db = database::init_database(&db_path)
+                    .await
+                    .expect("DB to be initialized");
+                let task_stack = TaskStack::new(db).await;
                 handle.manage(task_stack);
                 Ok::<(), Box<dyn std::error::Error>>(())
             })?;

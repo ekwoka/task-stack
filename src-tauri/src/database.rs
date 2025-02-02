@@ -4,8 +4,8 @@ use libsql::{params, Builder, Database};
 use std::path::Path;
 use ulid::Ulid;
 
-pub async fn init_database(path: &Path) -> Result<Database, libsql::Error> {
-    let db = Builder::new_local(path).build().await?;
+pub async fn init_database(db_path: &Path) -> Result<Database, libsql::Error> {
+    let db = Builder::new_local(db_path).build().await?;
 
     // Create tables if they don't exist
     let conn = db.connect()?;
@@ -52,8 +52,8 @@ pub async fn get_all_tasks(db: &Database) -> Result<Vec<(Task, i64)>, libsql::Er
     let conn = db.connect()?;
     let mut stmt = conn
         .prepare(
-            "SELECT id, title, description, created_at, state, completed_at, position 
-         FROM tasks 
+            "SELECT id, title, description, created_at, state, completed_at, position
+         FROM tasks
          ORDER BY position DESC",
         )
         .await?;
@@ -103,7 +103,7 @@ pub async fn update_task_state(
 ) -> Result<(), libsql::Error> {
     let conn = db.connect()?;
     conn.execute(
-        "UPDATE tasks 
+        "UPDATE tasks
          SET state = ?, completed_at = ?
          WHERE id = ?",
         params![

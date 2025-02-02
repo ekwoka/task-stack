@@ -1,3 +1,4 @@
+use crate::database;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -63,12 +64,8 @@ pub struct TaskStack {
 }
 
 impl TaskStack {
-    pub async fn new() -> Self {
-        let db_path = std::path::PathBuf::from("tasks.db");
-        let db = crate::database::init_database(&db_path)
-            .await
-            .expect("Failed to create database");
-        let tasks = crate::database::get_all_tasks(&db)
+    pub async fn new(db: libsql::Database) -> Self {
+        let tasks = database::get_all_tasks(&db)
             .await
             .expect("Failed to load tasks")
             .into_iter()
