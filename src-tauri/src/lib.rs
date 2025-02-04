@@ -9,16 +9,24 @@ pub use tasks::TaskStack;
 
 use commands::{add_task, complete_task, index, move_task_to_end};
 use tauri::{path::BaseDirectory, Manager};
+use tauri_plugin_window_state::StateFlags;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir().expect("App Data Dir to be Found");
             std::fs::create_dir_all(&app_data_dir).expect("App Data Dir to be Created");
 
             let handle = app.handle();
+
+            #[cfg(desktop)]
+            let _ = handle.plugin(
+                tauri_plugin_window_state::Builder::default()
+                    .with_state_flags(StateFlags::all() & !StateFlags::VISIBLE)
+                    .build(),
+            );
+
             let db_path = app
                 .path()
                 .resolve("tasks.db", BaseDirectory::AppData)
