@@ -108,9 +108,7 @@ impl TaskStack {
 
     pub fn first_active(&self) -> Option<Task> {
         let tasks = self.tasks.lock().unwrap();
-        tasks.iter()
-            .find(|t| t.state == TaskState::Active)
-            .cloned()
+        tasks.iter().find(|t| t.state == TaskState::Active).cloned()
     }
 
     pub fn size(&self) -> usize {
@@ -127,22 +125,20 @@ impl TaskStack {
         println!("TaskStack: completing task {}", id);
 
         // First update the database state
-        database::update_task_state(
-            &self.db,
-            &id,
-            TaskState::Completed,
-            Some(Utc::now()),
-        )
-        .await
-        .map_err(|e| {
-            println!("TaskStack: failed to update database: {}", e);
-            e.to_string()
-        })?;
+        database::update_task_state(&self.db, &id, TaskState::Completed, Some(Utc::now()))
+            .await
+            .map_err(|e| {
+                println!("TaskStack: failed to update database: {}", e);
+                e.to_string()
+            })?;
 
         // Then update the task state in memory
         let task = {
             let mut tasks = self.tasks.lock().unwrap();
-            let pos = tasks.iter().position(|t| t.id == id).ok_or("Task not found")?;
+            let pos = tasks
+                .iter()
+                .position(|t| t.id == id)
+                .ok_or("Task not found")?;
             let mut task = tasks[pos].clone();
             task.state = TaskState::Completed;
             task.completed_at = Some(Utc::now());
@@ -158,12 +154,16 @@ impl TaskStack {
         // Move task to end and collect positions
         let task_positions = {
             let mut tasks = self.tasks.lock().unwrap();
-            let pos = tasks.iter().position(|t| t.id == id).ok_or("Task not found")?;
+            let pos = tasks
+                .iter()
+                .position(|t| t.id == id)
+                .ok_or("Task not found")?;
             let task = tasks.remove(pos);
             tasks.push(task);
 
             // Collect all task IDs and their positions
-            tasks.iter()
+            tasks
+                .iter()
                 .enumerate()
                 .map(|(i, t)| (t.id, (i + 1) as i64))
                 .collect::<Vec<_>>()
@@ -181,7 +181,8 @@ impl TaskStack {
 
     pub fn get_tasks(&self) -> Vec<Task> {
         let tasks = self.tasks.lock().unwrap();
-        tasks.iter()
+        tasks
+            .iter()
             .filter(|task| {
                 match task.state {
                     TaskState::Active => true,

@@ -156,16 +156,15 @@ pub async fn update_task_state(
         TaskState::Completed => "completed",
     };
     let completed_at_str = completed_at.map(|dt| dt.to_rfc3339());
-    println!("Setting state to {} and completed_at to {:?}", state_str, completed_at_str);
+    println!(
+        "Setting state to {} and completed_at to {:?}",
+        state_str, completed_at_str
+    );
     conn.execute(
         "UPDATE tasks
          SET state = ?, completed_at = ?
          WHERE id = ?",
-        params![
-            state_str,
-            completed_at_str,
-            id.to_string(),
-        ],
+        params![state_str, completed_at_str, id.to_string(),],
     )
     .await?;
     println!("Database update successful");

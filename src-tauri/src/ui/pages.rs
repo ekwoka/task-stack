@@ -5,7 +5,10 @@ use html_node::{html, text, Node};
 pub fn render_index_page(stack: &TaskStack) -> Node {
     let task = stack.first_active();
     let total_tasks = stack.size();
-    let current_pos = task.as_ref().map(|t| stack.find_task_position(t).unwrap_or(0) + 1).unwrap_or(0);
+    let current_pos = task
+        .as_ref()
+        .map(|t| stack.find_task_position(t).unwrap_or(0) + 1)
+        .unwrap_or(0);
 
     html! {
         <div class="min-h-screen bg-gray-50 py-8">
