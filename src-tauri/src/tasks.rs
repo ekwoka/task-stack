@@ -65,7 +65,7 @@ pub struct TaskStack {
 
 impl TaskStack {
     pub async fn new(db: libsql::Database) -> Self {
-        let tasks = database::get_all_tasks(&db)
+        let tasks = database::get_current_tasks(&db)
             .await
             .expect("Failed to load tasks")
             .into_iter()
@@ -174,6 +174,15 @@ impl TaskStack {
     pub fn get_tasks(&self) -> Vec<Task> {
         let tasks = self.tasks.lock().unwrap();
         tasks.clone()
+    }
+
+    pub async fn get_current_tasks(&self) -> Vec<Task> {
+        database::get_current_tasks(&self.db)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(task, _)| task)
+            .collect()
     }
 }
 

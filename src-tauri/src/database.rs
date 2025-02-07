@@ -95,6 +95,54 @@ pub async fn get_all_tasks(db: &Database) -> Result<Vec<(Task, i64)>, libsql::Er
     Ok(tasks)
 }
 
+pub async fn get_current_tasks(db: &Database) -> Result<Vec<(Task, i64)>, libsql::Error> {
+    let conn = db.connect()?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, title, description, created_at, state, completed_at, position
+         FROM tasks
+         WHERE state = 'active' OR (state = 'completed' AND completed_at >= datetime('now', '-12 hours'))
+         ORDER BY position DESC",
+        )
+        .await?;
+
+    let mut rows = stmt.query(params![]).await?;
+    let mut tasks = Vec::new();
+
+    while let Some(row) = rows.next().await? {
+        let id: String = row.get(0)?;
+        let title: String = row.get(1)?;
+        let description: Option<String> = row.get(2)?;
+        let created_at: String = row.get(3)?;
+        let state: String = row.get(4)?;
+        let completed_at: Option<String> = row.get(5)?;
+        let position: i64 = row.get(6)?;
+
+        tasks.push((
+            Task {
+                id: Ulid::from_string(&id).unwrap(),
+                title,
+                description,
+                created_at: DateTime::parse_from_rfc3339(&created_at)
+                    .unwrap()
+                    .with_timezone(&Utc),
+                state: match state.as_str() {
+                    "active" => TaskState::Active,
+                    "completed" => TaskState::Completed,
+                    _ => TaskState::Active,
+                },
+                completed_at: completed_at.map(|dt| {
+                    DateTime::parse_from_rfc3339(&dt)
+                        .unwrap()
+                        .with_timezone(&Utc)
+                }),
+            },
+            position,
+        ));
+    }
+    Ok(tasks)
+}
+
 pub async fn update_task_state(
     db: &Database,
     id: &Ulid,
