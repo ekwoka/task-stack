@@ -3,6 +3,10 @@ use crate::tasks::TaskStack;
 use html_node::{html, text, Node};
 
 pub fn render_index_page(stack: &TaskStack) -> Node {
+    let task = stack.first_active();
+    let total_tasks = stack.size();
+    let current_pos = task.as_ref().map(|t| stack.find_task_position(t).unwrap_or(0) + 1).unwrap_or(0);
+
     html! {
         <div class="min-h-screen bg-gray-50 py-8">
             { render_notification() }
@@ -28,7 +32,7 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                     required
                                 />
-                            </div>
+                                            </div>
                             <div class="mb-4">
                                 <label for="description" class="block text-sm font-medium text-gray-700">{ text!("Description (optional)") }</label>
                                 <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Add any additional details about the task..."/>
@@ -42,7 +46,7 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                         </form>
                         <div id="task-list" class="space-y-4">
                             {
-                                if let Some(task) = stack.first() {
+                                if let Some(task) = stack.first_active() {
                                     render_task(&task, stack)
                                 } else {
                                     render_empty_state()

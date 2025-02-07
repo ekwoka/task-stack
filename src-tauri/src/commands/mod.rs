@@ -30,8 +30,17 @@ pub async fn add_task(
 }
 
 #[tauri::command]
-pub async fn complete_task(stack: State<'_, TaskStack>, id: Ulid) -> Result<PageResponse, String> {
-    stack.complete_task(id).await?;
+pub async fn complete_task(stack: State<'_, TaskStack>, id: String) -> Result<PageResponse, String> {
+    println!("Completing task with ID: {}", id);
+    let id = Ulid::from_string(&id).map_err(|e| {
+        println!("Failed to parse ID: {}", e);
+        e.to_string()
+    })?;
+    stack.complete_task(id).await.map_err(|e| {
+        println!("Failed to complete task: {}", e);
+        e.to_string()
+    })?;
+    println!("Task completed successfully");
     Ok(PageResponse::new(DomUpdate::from(
         render_index_page(&stack),
         "#app",

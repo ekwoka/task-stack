@@ -149,21 +149,26 @@ pub async fn update_task_state(
     state: TaskState,
     completed_at: Option<DateTime<Utc>>,
 ) -> Result<(), libsql::Error> {
+    println!("Updating task state in database for ID: {}", id);
     let conn = db.connect()?;
+    let state_str = match state {
+        TaskState::Active => "active",
+        TaskState::Completed => "completed",
+    };
+    let completed_at_str = completed_at.map(|dt| dt.to_rfc3339());
+    println!("Setting state to {} and completed_at to {:?}", state_str, completed_at_str);
     conn.execute(
         "UPDATE tasks
          SET state = ?, completed_at = ?
          WHERE id = ?",
         params![
-            match state {
-                TaskState::Active => "active",
-                TaskState::Completed => "completed",
-            },
-            completed_at.map(|dt| dt.to_rfc3339()),
+            state_str,
+            completed_at_str,
             id.to_string(),
         ],
     )
     .await?;
+    println!("Database update successful");
     Ok(())
 }
 

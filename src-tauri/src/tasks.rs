@@ -106,6 +106,13 @@ impl TaskStack {
         tasks.first().cloned()
     }
 
+    pub fn first_active(&self) -> Option<Task> {
+        let tasks = self.tasks.lock().unwrap();
+        tasks.iter()
+            .find(|t| t.state == TaskState::Active)
+            .cloned()
+    }
+
     pub fn size(&self) -> usize {
         let tasks = self.tasks.lock().unwrap();
         tasks.len()
@@ -117,63 +124,80 @@ impl TaskStack {
     }
 
     pub async fn complete_task(&self, id: Ulid) -> Result<Task, String> {
-        let task_update = {
+        println!("TaskStack: completing task {}", id);
+
+        // First update the database state
+        database::update_task_state(
+            &self.db,
+            &id,
+            TaskState::Completed,
+            Some(Utc::now()),
+        )
+        .await
+        .map_err(|e| {
+            println!("TaskStack: failed to update database: {}", e);
+            e.to_string()
+        })?;
+
+        // Then update the task state in memory
+        let task = {
             let mut tasks = self.tasks.lock().unwrap();
-            if let Some(pos) = tasks.iter().position(|t| t.id == id) {
-                let mut task = tasks[pos].clone();
-                task.state = TaskState::Completed;
-                task.completed_at = Some(Utc::now());
-                tasks[pos] = task.clone();
-                Some(task)
-            } else {
-                None
-            }
+            let pos = tasks.iter().position(|t| t.id == id).ok_or("Task not found")?;
+            let mut task = tasks[pos].clone();
+            task.state = TaskState::Completed;
+            task.completed_at = Some(Utc::now());
+            tasks[pos] = task.clone();
+            task
         };
 
-        if let Some(task) = task_update {
-            crate::database::update_task_state(
-                &self.db,
-                &id,
-                TaskState::Completed,
-                Some(Utc::now()),
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-            Ok(task)
-        } else {
-            Err("Task not found".to_string())
-        }
+        println!("TaskStack: task completed");
+        Ok(task)
     }
 
     pub async fn move_to_end(&self, id: Ulid) -> Result<(), String> {
-        let task_to_move = {
+        // Move task to end and collect positions
+        let task_positions = {
             let mut tasks = self.tasks.lock().unwrap();
-            if let Some(pos) = tasks.iter().position(|t| t.id == id) {
-                let task = tasks.remove(pos);
-                Some(task)
-            } else {
-                None
-            }
+            let pos = tasks.iter().position(|t| t.id == id).ok_or("Task not found")?;
+            let task = tasks.remove(pos);
+            tasks.push(task);
+
+            // Collect all task IDs and their positions
+            tasks.iter()
+                .enumerate()
+                .map(|(i, t)| (t.id, (i + 1) as i64))
+                .collect::<Vec<_>>()
         };
 
-        if let Some(task) = task_to_move {
-            let new_pos = {
-                let mut tasks = self.tasks.lock().unwrap();
-                tasks.push(task);
-                tasks.len() as i64 - 1
-            };
-            crate::database::update_task_position(&self.db, &id, new_pos)
+        // Update positions for all tasks
+        for (task_id, position) in task_positions {
+            database::update_task_position(&self.db, &task_id, position)
                 .await
                 .map_err(|e| e.to_string())?;
-            Ok(())
-        } else {
-            Err("Task not found".to_string())
         }
+
+        Ok(())
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
         let tasks = self.tasks.lock().unwrap();
-        tasks.clone()
+        tasks.iter()
+            .filter(|task| {
+                match task.state {
+                    TaskState::Active => true,
+                    TaskState::Completed => {
+                        // Only show completed tasks from the last 12 hours
+                        if let Some(completed_at) = task.completed_at {
+                            let twelve_hours_ago = Utc::now() - chrono::Duration::hours(12);
+                            completed_at > twelve_hours_ago
+                        } else {
+                            false
+                        }
+                    }
+                }
+            })
+            .cloned()
+            .collect()
     }
 
     pub async fn get_current_tasks(&self) -> Vec<Task> {

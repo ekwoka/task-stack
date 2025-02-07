@@ -1,4 +1,4 @@
-use crate::tasks::{Task, TaskStack};
+use crate::tasks::{Task, TaskStack, TaskState};
 use html_node::{html, text, Node};
 
 pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
@@ -20,7 +20,23 @@ pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
           <div class="bg-white rounded-lg p-6 relative border border-gray-200 shadow-sm">
               <div class="flex justify-between items-start mb-2">
                   <div class="flex flex-col gap-1">
-                    <h3 class="text-lg font-medium text-gray-900">{ text!("{}", task.title) }</h3>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-lg font-medium text-gray-900">{ text!("{}", task.title) }</h3>
+                        {
+                            match task.state {
+                                TaskState::Active => html! {
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        { text!("Active") }
+                                    </span>
+                                },
+                                TaskState::Completed => html! {
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        { text!("Completed") }
+                                    </span>
+                                }
+                            }
+                        }
+                    </div>
                     <span class="text-xs text-gray-400">{ text!("#{}", task.id) }</span>
                   </div>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
