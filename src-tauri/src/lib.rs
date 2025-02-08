@@ -7,7 +7,7 @@ pub mod ui;
 // Re-export the task stack for use in main.rs
 pub use tasks::TaskStack;
 
-use commands::{add_task, complete_task, index, move_task_to_end};
+use commands::{add_task, complete_task, index, list, move_task_to_end};
 use tauri::{path::BaseDirectory, Manager};
 use tauri_plugin_window_state::StateFlags;
 
@@ -52,6 +52,7 @@ pub fn run() {
             add_task,
             complete_task,
             move_task_to_end,
+            list,
         ])
         .run(tauri::generate_context!())
         .expect("Task Stack to start correctly");

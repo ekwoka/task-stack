@@ -1,6 +1,6 @@
 use crate::tasks::{Task, TaskStack};
 use crate::types::{DomUpdate, PageResponse};
-use crate::ui::pages::render_index_page;
+use crate::ui::pages::{render_index_page, render_list_page};
 use tauri::State;
 use ulid::Ulid;
 
@@ -59,6 +59,15 @@ pub async fn move_task_to_end(
     stack.move_to_end(id).await?;
     Ok(PageResponse::new(DomUpdate::from(
         render_index_page(&stack),
+        "#app",
+        "replace",
+    )))
+}
+
+#[tauri::command]
+pub async fn list(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
+    Ok(PageResponse::new(DomUpdate::from(
+        render_list_page(&stack),
         "#app",
         "replace",
     )))
