@@ -67,7 +67,7 @@ pub async fn move_task_to_end(
 #[tauri::command]
 pub async fn list(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        render_list_page(&stack),
+        render_list_page(&stack).await,
         "#app",
         "replace",
     )))

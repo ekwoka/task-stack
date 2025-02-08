@@ -179,25 +179,12 @@ impl TaskStack {
         Ok(())
     }
 
-    pub fn get_tasks(&self) -> Vec<Task> {
-        let tasks = self.tasks.lock().unwrap();
-        tasks
-            .iter()
-            .filter(|task| {
-                match task.state {
-                    TaskState::Active => true,
-                    TaskState::Completed => {
-                        // Only show completed tasks from the last 12 hours
-                        if let Some(completed_at) = task.completed_at {
-                            let twelve_hours_ago = Utc::now() - chrono::Duration::hours(12);
-                            completed_at > twelve_hours_ago
-                        } else {
-                            false
-                        }
-                    }
-                }
-            })
-            .cloned()
+    pub async fn get_tasks(&self) -> Vec<Task> {
+        database::get_all_tasks(&self.db)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(task, _)| task)
             .collect()
     }
 

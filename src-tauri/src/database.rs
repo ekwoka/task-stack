@@ -53,8 +53,20 @@ pub async fn get_all_tasks(db: &Database) -> Result<Vec<(Task, i64)>, libsql::Er
     let mut stmt = conn
         .prepare(
             "SELECT id, title, description, created_at, state, completed_at, position
-         FROM tasks
-         ORDER BY position DESC",
+             FROM tasks
+             ORDER BY 
+                CASE state 
+                    WHEN 'completed' THEN 0 
+                    ELSE 1 
+                END,
+                CASE state
+                    WHEN 'completed' THEN completed_at
+                    ELSE NULL
+                END DESC NULLS LAST,
+                CASE state
+                    WHEN 'active' THEN position
+                    ELSE NULL
+                END DESC NULLS LAST",
         )
         .await?;
 

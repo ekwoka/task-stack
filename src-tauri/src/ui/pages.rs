@@ -1,5 +1,5 @@
 use super::components::{render_empty_state, render_notification, render_task};
-use crate::tasks::{Task, TaskStack};
+use crate::tasks::TaskStack;
 use html_node::{html, text, Node};
 
 fn render_nav_buttons(current_view: &str) -> Node {
@@ -91,8 +91,8 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
     }
 }
 
-pub fn render_list_page(stack: &TaskStack) -> Node {
-    let tasks = stack.get_tasks();
+pub async fn render_list_page(stack: &TaskStack) -> Node {
+    let tasks = stack.get_tasks().await;
 
     html! {
         <div class="min-h-screen bg-gray-50 py-8">
