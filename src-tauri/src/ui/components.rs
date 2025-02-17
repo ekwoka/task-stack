@@ -1,13 +1,12 @@
 use crate::tasks::{Task, TaskStack, TaskState};
 use html_node::{html, text, Node};
 
-pub fn render_task(task: &Task, stack: &TaskStack) -> Node {
-    let current_pos = stack.find_task_position(task).unwrap_or(0) + 1;
-    let total_tasks = stack.size();
+pub async fn render_task(current_pos: usize, task: &Task, stack: &TaskStack) -> Node {
+    let total_tasks = stack.size().await.unwrap_or(0);
     let remaining_tasks = if task.state == TaskState::Active {
         total_tasks.saturating_sub(current_pos)
     } else {
-        0 // Don't show stacked cards for completed tasks
+        0
     };
 
     html! {

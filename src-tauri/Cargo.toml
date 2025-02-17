@@ -14,6 +14,7 @@ tauri-build = { version = "2.0.5", features = [] }
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3.31"
 html-node = { version = "0.5.0", features = ["pretty"] }
 libsql = "0.6.0"
 ron = "0.8.1"

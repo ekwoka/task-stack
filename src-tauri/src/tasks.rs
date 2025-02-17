@@ -1,7 +1,6 @@
 use crate::database;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 use ulid::Ulid;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -59,147 +58,143 @@ impl Task {
 }
 
 pub struct TaskStack {
-    tasks: Mutex<Vec<Task>>,
     db: libsql::Database,
 }
 
 impl TaskStack {
-    pub async fn new(db: libsql::Database) -> Self {
-        let tasks = database::get_current_tasks(&db)
-            .await
-            .expect("Failed to load tasks")
-            .into_iter()
-            .map(|(task, _)| task)
-            .collect();
-        Self {
-            tasks: Mutex::new(tasks),
-            db,
-        }
+    pub fn new(db: libsql::Database) -> Self {
+        Self { db }
     }
 
-    pub async fn push(&self, task: Task) {
-        let position = {
-            let tasks = self.tasks.lock().unwrap();
-            (tasks.len() + 1) as i64
+    pub async fn push(&self, title: String, description: Option<String>) -> Result<(), String> {
+        let task = Task {
+            id: Ulid::new(),
+            title,
+            description,
+            created_at: Utc::now(),
+            state: TaskState::Active,
+            completed_at: None,
         };
-        crate::database::insert_task(&self.db, &task, position)
+
+        let position = database::get_all_tasks(&self.db)
             .await
-            .expect("Failed to insert task");
-        let mut tasks = self.tasks.lock().unwrap();
-        tasks.push(task);
+            .map_err(|e| e.to_string())?
+            .len() as i64;
+
+        database::insert_task(&self.db, &task, position)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
     }
 
-    pub async fn pop(&self) -> Option<Task> {
-        let task = self.tasks.lock().unwrap().pop();
-        if let Some(task) = task {
-            crate::database::delete_task(&self.db, &task.id)
+    pub async fn pop(&self) -> Result<Option<Task>, String> {
+        let tasks = database::get_all_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if let Some((task, _)) = tasks.last() {
+            database::delete_task(&self.db, &task.id)
                 .await
-                .expect("Failed to delete task");
-            Some(task)
+                .map_err(|e| e.to_string())?;
+            Ok(Some(task.clone()))
         } else {
-            None
+            Ok(None)
         }
     }
 
-    pub fn first(&self) -> Option<Task> {
-        let tasks = self.tasks.lock().unwrap();
-        tasks.first().cloned()
+    pub async fn first(&self) -> Result<Option<Task>, String> {
+        let tasks = database::get_all_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(tasks.first().map(|(task, _)| task.clone()))
     }
 
-    pub fn first_active(&self) -> Option<Task> {
-        let tasks = self.tasks.lock().unwrap();
-        tasks.iter().find(|t| t.state == TaskState::Active).cloned()
+    pub async fn first_active(&self) -> Result<Option<Task>, String> {
+        let tasks = database::get_all_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(tasks
+            .iter()
+            .find(|(task, _)| task.state == TaskState::Active)
+            .map(|(task, _)| task.clone()))
     }
 
-    pub fn size(&self) -> usize {
-        let tasks = self.tasks.lock().unwrap();
-        tasks.len()
+    pub async fn size(&self) -> Result<usize, String> {
+        let tasks = database::get_all_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(tasks.len())
     }
 
-    pub fn find_task_position(&self, task: &Task) -> Option<usize> {
-        let tasks = self.tasks.lock().unwrap();
-        tasks.iter().position(|t| t.id == task.id)
+    pub async fn find_task_position(&self, task: &Task) -> Result<usize, String> {
+        let tasks = database::get_all_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(tasks.iter().position(|(t, _)| t.id == task.id).unwrap_or(0))
     }
 
     pub async fn complete_task(&self, id: Ulid) -> Result<Task, String> {
-        println!("TaskStack: completing task {}", id);
-
-        // First update the database state
-        database::update_task_state(&self.db, &id, TaskState::Completed, Some(Utc::now()))
+        let tasks = database::get_all_tasks(&self.db)
             .await
-            .map_err(|e| {
-                println!("TaskStack: failed to update database: {}", e);
-                e.to_string()
-            })?;
+            .map_err(|e| e.to_string())?;
 
-        // Then update the task state in memory
-        let task = {
-            let mut tasks = self.tasks.lock().unwrap();
-            let pos = tasks
-                .iter()
-                .position(|t| t.id == id)
-                .ok_or("Task not found")?;
-            let mut task = tasks[pos].clone();
-            task.state = TaskState::Completed;
-            task.completed_at = Some(Utc::now());
-            tasks[pos] = task.clone();
-            task
-        };
+        let task_pos = tasks
+            .iter()
+            .position(|(task, _)| task.id == id)
+            .ok_or_else(|| "Task not found".to_string())?;
 
-        println!("TaskStack: task completed");
+        let (mut task, _) = tasks[task_pos].clone();
+        task.mark_completed();
+
+        database::update_task_state(&self.db, &id, task.state.clone(), task.completed_at)
+            .await
+            .map_err(|e| e.to_string())?;
+
         Ok(task)
     }
 
     pub async fn move_to_end(&self, id: Ulid) -> Result<(), String> {
         // Move task to end and collect positions
-        let task_positions = {
-            let mut tasks = self.tasks.lock().unwrap();
-            let pos = tasks
-                .iter()
-                .position(|t| t.id == id)
-                .ok_or("Task not found")?;
-            let task = tasks.remove(pos);
-            tasks.push(task);
+        let new_position = database::get_current_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?
+            .last()
+            .ok_or_else(|| "No tasks found".to_string())
+            .map(|(_, position)| position)
+            .unwrap_or(&0i64)
+            + 1;
 
-            // Collect all task IDs and their positions
-            tasks
-                .iter()
-                .enumerate()
-                .map(|(i, t)| (t.id, (i + 1) as i64))
-                .collect::<Vec<_>>()
-        };
-
-        // Update positions for all tasks
-        for (task_id, position) in task_positions {
-            database::update_task_position(&self.db, &task_id, position)
-                .await
-                .map_err(|e| e.to_string())?;
-        }
+        database::update_task_position(&self.db, &id, new_position)
+            .await
+            .map_err(|e| e.to_string())?;
 
         Ok(())
     }
 
-    pub async fn get_tasks(&self) -> Vec<Task> {
-        database::get_all_tasks(&self.db)
+    pub async fn get_tasks(&self) -> Result<Vec<Task>, String> {
+        let tasks = database::get_all_tasks(&self.db)
             .await
-            .unwrap_or_default()
-            .into_iter()
-            .map(|(task, _)| task)
-            .collect()
+            .map_err(|e| e.to_string())?;
+        Ok(tasks.into_iter().map(|(task, _)| task).collect())
     }
 
-    pub async fn get_current_tasks(&self) -> Vec<Task> {
-        database::get_current_tasks(&self.db)
+    pub async fn get_current_tasks(&self) -> Result<Vec<Task>, String> {
+        let tasks = database::get_current_tasks(&self.db)
             .await
-            .unwrap_or_default()
-            .into_iter()
-            .map(|(task, _)| task)
-            .collect()
+            .map_err(|e| e.to_string())?;
+        Ok(tasks.into_iter().map(|(task, _)| task).collect())
     }
-}
 
-impl Default for TaskStack {
-    fn default() -> Self {
-        todo!("Implement default for TaskStack")
+    pub async fn find_task(&self, id: &Ulid) -> Result<Task, String> {
+        let tasks = database::get_all_tasks(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        tasks
+            .into_iter()
+            .find(|(task, _)| task.id == *id)
+            .map(|(task, _)| task)
+            .ok_or_else(|| "Task not found".to_string())
     }
 }

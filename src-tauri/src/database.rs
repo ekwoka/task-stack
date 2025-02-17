@@ -54,10 +54,10 @@ pub async fn get_all_tasks(db: &Database) -> Result<Vec<(Task, i64)>, libsql::Er
         .prepare(
             "SELECT id, title, description, created_at, state, completed_at, position
              FROM tasks
-             ORDER BY 
-                CASE state 
-                    WHEN 'completed' THEN 0 
-                    ELSE 1 
+             ORDER BY
+                CASE state
+                    WHEN 'completed' THEN 0
+                    ELSE 1
                 END,
                 CASE state
                     WHEN 'completed' THEN completed_at

@@ -7,7 +7,7 @@ use ulid::Ulid;
 #[tauri::command]
 pub async fn index(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))
@@ -19,11 +19,9 @@ pub async fn add_task(
     title: String,
     description: Option<String>,
 ) -> Result<PageResponse, String> {
-    let mut task = Task::new(title);
-    task.description = description;
-    stack.push(task).await;
+    stack.push(title, description).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))
@@ -45,7 +43,7 @@ pub async fn complete_task(
     })?;
     println!("Task completed successfully");
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))
@@ -58,7 +56,7 @@ pub async fn move_task_to_end(
 ) -> Result<PageResponse, String> {
     stack.move_to_end(id).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))

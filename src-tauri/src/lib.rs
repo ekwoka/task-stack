@@ -7,7 +7,6 @@ pub mod ui;
 // Re-export the task stack for use in main.rs
 pub use tasks::TaskStack;
 
-use commands::{add_task, complete_task, index, list, move_task_to_end};
 use tauri::{path::BaseDirectory, Manager};
 use tauri_plugin_window_state::StateFlags;
 
@@ -35,7 +34,7 @@ pub fn run() {
                 let db = database::init_database(&db_path)
                     .await
                     .expect("DB to be initialized");
-                let task_stack = TaskStack::new(db).await;
+                let task_stack = TaskStack::new(db);
                 handle.manage(task_stack);
                 Ok::<(), Box<dyn std::error::Error>>(())
             })?;
@@ -48,11 +47,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            index,
-            add_task,
-            complete_task,
-            move_task_to_end,
-            list,
+            commands::index,
+            commands::list,
+            commands::add_task,
+            commands::complete_task,
+            commands::move_task_to_end,
         ])
         .run(tauri::generate_context!())
         .expect("Task Stack to start correctly");
