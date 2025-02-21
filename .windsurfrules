@@ -1,1 +1,2 @@
 After making changes to Rust code, it's important to run `cargo check` to ensure the changes are type-safe.
+After successfully running `cargo check`, run `cargo clippy` to find additional touchups.

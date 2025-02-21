@@ -1,4 +1,4 @@
-use crate::tasks::{Task, TaskStack};
+use crate::tasks::TaskStack;
 use crate::types::{DomUpdate, PageResponse};
 use crate::ui::pages::{render_index_page, render_list_page};
 use tauri::State;
@@ -11,6 +11,17 @@ pub async fn index(stack: State<'_, TaskStack>) -> Result<PageResponse, String> 
         "#app",
         "replace",
     )))
+}
+#[tauri::command]
+pub async fn set_list_id(state: State<'_, TaskStack>, list_id: String) -> Result<(), String> {
+    let list_id = Ulid::from_string(&list_id).map_err(|e| e.to_string())?;
+    state.set_list_id(list_id);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_list_id(state: State<'_, TaskStack>) -> Result<Option<String>, String> {
+    Ok(Some(state.get_list_id().to_string()))
 }
 
 #[tauri::command]

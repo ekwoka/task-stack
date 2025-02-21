@@ -5,7 +5,7 @@ pub mod types;
 pub mod ui;
 
 // Re-export the task stack for use in main.rs
-pub use tasks::TaskStack;
+pub use tasks::{Task, TaskStack};
 
 use tauri::{path::BaseDirectory, Manager};
 use tauri_plugin_window_state::StateFlags;
@@ -34,9 +34,22 @@ pub fn run() {
                 let db = database::init_database(&db_path)
                     .await
                     .expect("DB to be initialized");
-                let task_stack = TaskStack::new(db);
-                handle.manage(task_stack);
-                Ok::<(), Box<dyn std::error::Error>>(())
+                let binding = database::get_lists(&db)
+                    .await
+                    .expect("DB Should be queryable");
+                let list_id = binding.first();
+                if let Some(id) = list_id {
+                    let task_stack = TaskStack::new(db, *id);
+                    handle.manage(task_stack);
+                    Ok::<(), Box<dyn std::error::Error>>(())
+                } else {
+                    let id = database::create_list(&db, "First list")
+                        .await
+                        .expect("List to be created");
+                    let task_stack = TaskStack::new(db, id);
+                    handle.manage(task_stack);
+                    Ok::<(), Box<dyn std::error::Error>>(())
+                }
             })?;
             #[cfg(debug_assertions)]
             {
@@ -52,6 +65,8 @@ pub fn run() {
             commands::add_task,
             commands::complete_task,
             commands::move_task_to_end,
+            commands::set_list_id,
+            commands::get_list_id,
         ])
         .run(tauri::generate_context!())
         .expect("Task Stack to start correctly");

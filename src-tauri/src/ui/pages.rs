@@ -33,9 +33,9 @@ pub async fn render_index_page(stack: &TaskStack) -> Node {
     let task = stack.first_active().await.unwrap_or(None);
     let total_tasks = stack.size().await.unwrap_or(0);
     let current_pos = if let Some(ref task) = task {
-        stack.find_task_position(&task).await.unwrap_or(0) + 1
+        stack.find_task_position(task).await.unwrap_or(0) + 1
     } else {
-        0
+        1
     };
 
     html! {
