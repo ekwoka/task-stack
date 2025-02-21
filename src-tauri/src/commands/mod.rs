@@ -1,4 +1,4 @@
-use crate::tasks::{Task, TaskStack};
+use crate::tasks::TaskStack;
 use crate::types::{DomUpdate, PageResponse};
 use crate::ui::pages::{render_index_page, render_list_page};
 use tauri::State;
@@ -7,10 +7,21 @@ use ulid::Ulid;
 #[tauri::command]
 pub async fn index(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))
+}
+#[tauri::command]
+pub async fn set_list_id(state: State<'_, TaskStack>, list_id: String) -> Result<(), String> {
+    let list_id = Ulid::from_string(&list_id).map_err(|e| e.to_string())?;
+    state.set_list_id(list_id);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_list_id(state: State<'_, TaskStack>) -> Result<Option<String>, String> {
+    Ok(Some(state.get_list_id().to_string()))
 }
 
 #[tauri::command]
@@ -19,11 +30,9 @@ pub async fn add_task(
     title: String,
     description: Option<String>,
 ) -> Result<PageResponse, String> {
-    let mut task = Task::new(title);
-    task.description = description;
-    stack.push(task).await;
+    stack.push(title, description).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))
@@ -45,7 +54,7 @@ pub async fn complete_task(
     })?;
     println!("Task completed successfully");
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))
@@ -58,7 +67,7 @@ pub async fn move_task_to_end(
 ) -> Result<PageResponse, String> {
     stack.move_to_end(id).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack),
+        render_index_page(&stack).await,
         "#app",
         "replace",
     )))

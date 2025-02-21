@@ -29,13 +29,14 @@ fn render_nav_buttons(current_view: &str) -> Node {
     }
 }
 
-pub fn render_index_page(stack: &TaskStack) -> Node {
-    let task = stack.first_active();
-    let total_tasks = stack.size();
-    let current_pos = task
-        .as_ref()
-        .map(|t| stack.find_task_position(t).unwrap_or(0) + 1)
-        .unwrap_or(0);
+pub async fn render_index_page(stack: &TaskStack) -> Node {
+    let task = stack.first_active().await.unwrap_or(None);
+    let total_tasks = stack.size().await.unwrap_or(0);
+    let current_pos = if let Some(ref task) = task {
+        stack.find_task_position(task).await.unwrap_or(0) + 1
+    } else {
+        1
+    };
 
     html! {
         <div class="min-h-screen bg-gray-50 py-8">
@@ -47,7 +48,7 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                 </header>
                 { render_nav_buttons("index") }
                 <main class="space-y-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6" style={format!("padding-bottom: {}px;", 3.min(stack.size().saturating_sub(1)) * 2 + 24)}>
+                    <div class="bg-white rounded-xl shadow-sm p-6" style={format!("padding-bottom: {}px;", 3.min(total_tasks.saturating_sub(1)) * 2 + 24)}>
                         <form
                             id="task-form"
                             data-command="add_task"
@@ -77,8 +78,8 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
                         </form>
                         <div id="task-list" class="space-y-4">
                         {
-                            if let Some(task) = stack.first_active() {
-                                render_task(&task, stack)
+                            if let Some(task) = task {
+                                render_task(current_pos, &task, stack).await
                             } else {
                                 render_empty_state()
                             }
@@ -92,7 +93,7 @@ pub fn render_index_page(stack: &TaskStack) -> Node {
 }
 
 pub async fn render_list_page(stack: &TaskStack) -> Node {
-    let tasks = stack.get_tasks().await;
+    let tasks = stack.get_tasks().await.unwrap_or(vec![]);
 
     html! {
         <div class="min-h-screen bg-gray-50 py-8">
@@ -112,7 +113,12 @@ pub async fn render_list_page(stack: &TaskStack) -> Node {
                                 } else {
                                     html! {
                                         <div class="space-y-4">
-                                            { tasks.iter().map(|task| render_task(task, stack)).collect::<Vec<_>>() }
+                                            {
+                                              let task_nodes: Vec<Node> = futures::future::join_all(tasks.iter()
+                                                .enumerate()
+                                                  .map(|(i, task)| render_task(i+1, task, stack))).await;
+                                              task_nodes
+                                            }
                                         </div>
                                     }
                                 }
