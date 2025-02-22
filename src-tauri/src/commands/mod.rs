@@ -1,13 +1,13 @@
 use crate::tasks::TaskStack;
 use crate::types::{DomUpdate, PageResponse};
-use crate::ui::pages::{render_index_page, render_list_page};
+use crate::ui::pages::{index, list};
 use tauri::State;
 use ulid::Ulid;
 
 #[tauri::command]
 pub async fn index(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack).await,
+        index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -32,7 +32,7 @@ pub async fn add_task(
 ) -> Result<PageResponse, String> {
     stack.push(title, description).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack).await,
+        index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -54,7 +54,7 @@ pub async fn complete_task(
     })?;
     println!("Task completed successfully");
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack).await,
+        index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -67,7 +67,7 @@ pub async fn move_task_to_end(
 ) -> Result<PageResponse, String> {
     stack.move_to_end(id).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        render_index_page(&stack).await,
+        index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -76,7 +76,7 @@ pub async fn move_task_to_end(
 #[tauri::command]
 pub async fn list(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        render_list_page(&stack).await,
+        list::render(&stack).await,
         "#app",
         "replace",
     )))
