@@ -40,5 +40,9 @@ jobs:
           cargo install cargo-binstall
           cargo binstall cargo-run-bin -y
 
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features
+
       - name: Build
+        if: matrix.platform != 'windows-latest'
         run: cargo make build
