@@ -22,13 +22,21 @@ pub async fn render(stack: &TaskStack) -> Node {
                     <p class="mt-2 text-gray-600">{ text!("Focus on one task at a time, in the order they were added") }</p>
                 </header>
                 { navigation::navigation("index", stack).await }
-                <main class="space-y-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6" style={format!("padding-bottom: {}px;", 3.min(total_tasks.saturating_sub(1)) * 2 + 24)}>
+                <main class="flex flex-col gap-12">
+                    <div class="bg-white rounded-xl shadow-sm p-6 flex flex-col gap-12" style={format!("padding-bottom: {}px;", 3.min(total_tasks.saturating_sub(1)) * 2 + 24)}>
+                        <div id="task-list" class="space-y-4">
+                        {
+                            if let Some(task) = task {
+                                task::card(current_pos, &task, stack).await
+                            } else {
+                                task::empty()
+                            }
+                        }
+                        </div>
                         <form
                             id="task-form"
                             data-command="add_task"
                             data-trigger="submit"
-                            class="mb-8"
                         >
                             <div class="mb-4">
                                 <label for="title" class="block text-sm font-medium text-gray-700">Task Title</label>
@@ -51,15 +59,6 @@ pub async fn render(stack: &TaskStack) -> Node {
                                 { text!("Add Task") }
                             </button>
                         </form>
-                        <div id="task-list" class="space-y-4">
-                        {
-                            if let Some(task) = task {
-                                task::card(current_pos, &task, stack).await
-                            } else {
-                                task::empty()
-                            }
-                        }
-                      </div>
                     </div>
                 </main>
             </div>

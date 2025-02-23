@@ -11,10 +11,10 @@ pub async fn navigation(current_view: &str, stack: &TaskStack) -> Node {
     println!("lists: {:?}", lists);
 
     html! {
-        <nav class="mb-8 flex items-center justify-between max-w-3xl mx-auto px-4">
+        <nav class="flex items-center justify-between max-w-3xl mx-auto px-4">
             <div class="flex items-center space-x-4 text-sm">
                 <button
-                    class={format!("text-gray-600 hover:text-gray-900 transition-colors {}",
+                    class={format!("cursor-pointer text-gray-600 hover:text-gray-900 transition-colors {}",
                         if current_view == "index" { "text-blue-500" } else { "" }
                     )}
                     data-command="index"
@@ -23,7 +23,7 @@ pub async fn navigation(current_view: &str, stack: &TaskStack) -> Node {
                     { text!("Single") }
                 </button>
                 <button
-                    class={format!("text-gray-600 hover:text-gray-900 transition-colors {}",
+                    class={format!("cursor-pointer text-gray-600 hover:text-gray-900 transition-colors {}",
                         if current_view == "list" { "text-blue-500" } else { "" }
                     )}
                     data-command="list"
