@@ -14,7 +14,7 @@ pub async fn navigation(current_view: &str, stack: &TaskStack) -> Node {
         <nav class="mb-8">
             <div class="max-w-3xl mx-auto">
                 <div class="flex flex-col space-y-4">
-                    <div class="flex justify-center">
+                    <div id="list-selector" class="flex justify-center">
                         <select
                             class="block w-full max-w-xs bg-white border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             data-command="switch_list"
