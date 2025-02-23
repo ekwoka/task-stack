@@ -29,7 +29,7 @@ const commandHandler = async (event: Event) => {
   if (!command) return;
 
   try {
-    const payload = JSON.parse(payloadStr);
+    const payload = new Function('$event', `return ${payloadStr}`)(event);
 
     // Handle form submission if the element is a form
     if (el instanceof HTMLFormElement) {

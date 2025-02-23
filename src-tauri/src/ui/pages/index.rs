@@ -21,7 +21,7 @@ pub async fn render(stack: &TaskStack) -> Node {
                     <h1 class="text-4xl font-bold text-gray-900">{ text!("Task Stack") }</h1>
                     <p class="mt-2 text-gray-600">{ text!("Focus on one task at a time, in the order they were added") }</p>
                 </header>
-                { navigation::buttons("index") }
+                { navigation::navigation("index", stack).await }
                 <main class="space-y-8">
                     <div class="bg-white rounded-xl shadow-sm p-6" style={format!("padding-bottom: {}px;", 3.min(total_tasks.saturating_sub(1)) * 2 + 24)}>
                         <form

@@ -6,7 +6,11 @@ load_cargo_aliases = true
 alias = "build"
 
 [tasks.watch]
-script = "cargo watch -x clippy -x 'fmt --all'"
+script = "cargo watch -x clippy -x 'fmt --all' -x 'make nextest'"
+
+[tasks.nextest]
+command = "cargo"
+args = ["nextest", "--no-tests", "pass"]
 
 [tasks.fmt]
 command = "cargo"
@@ -36,4 +40,4 @@ condition = { files_modified = { input = [
 ] } }
 command = "cargo"
 args = ["tauri", "build"]
-dependencies = ["clippy", "fmt", "pnpm"]
+dependencies = ["clippy", "fmt", "nextest", "pnpm"]
