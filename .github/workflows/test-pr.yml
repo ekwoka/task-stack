@@ -44,8 +44,11 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-targets --all-features
 
-      - name: Build
+      - name: Test
+        run: cargo make nextest
+
+      - name: Build Desktop
         if: matrix.platform != 'windows-latest'
         env:
           BINSTALL_NO_DISCOVER_GITHUB_TOKEN: 'true'
-        run: cargo make build
+        run: cargo make build-desktop

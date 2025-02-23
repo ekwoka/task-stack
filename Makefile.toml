@@ -25,19 +25,65 @@ args = ["tauri", "dev"]
 dependencies = ["pnpm"]
 
 [tasks.precommit]
-dependencies = ["clippy", "fmt", "pnpm"]
+dependencies = ["clippy", "fmt", "nextest", "pnpm"]
 
 [tasks.pnpm]
 command = "pnpm"
 args = ["i"]
 
+[tasks.build-all]
+condition = { files_modified = { input = [
+  "./Cargo.*",
+  "./**/*.rs",
+], output = [
+  "./target/release/task-stack",
+  "./target/aarch64-linux-android/release/task-stack",
+  "./target/aarch64-apple-ios/release/task-stack",
+] } }
+run_task = { name = ["build", "build-android", "build-ios"], parallel = false }
+dependencies = ["clippy", "fmt", "nextest"]
+
 [tasks.build]
+command = "cargo"
+args = ["tauri", "build"]
+dependencies = ["pnpm"]
+
+[tasks.desktop]
 condition = { files_modified = { input = [
   "./Cargo.*",
   "./**/*.rs",
 ], output = [
   "./target/release/task-stack",
 ] } }
+run_task = { name = ["build"], parallel = false }
+dependencies = ["clippy", "fmt", "nextest"]
+
+[tasks.build-android]
 command = "cargo"
-args = ["tauri", "build"]
-dependencies = ["clippy", "fmt", "nextest", "pnpm"]
+args = ["tauri", "android", "build"]
+dependencies = ["pnpm"]
+
+[tasks.android]
+condition = { files_modified = { input = [
+  "./Cargo.*",
+  "./**/*.rs",
+], output = [
+  "./src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk",
+] } }
+run_task = { name = ["build-android"], parallel = false }
+dependencies = ["clippy", "fmt", "nextest"]
+
+[tasks.build-ios]
+command = "cargo"
+args = ["tauri", "ios", "build"]
+dependencies = ["pnpm"]
+
+[tasks.ios]
+condition = { files_modified = { input = [
+  "./Cargo.*",
+  "./**/*.rs",
+], output = [
+  "./target/aarch64-apple-ios/release/task-stack",
+] } }
+run_task = { name = ["build-ios"], parallel = false }
+dependencies = ["clippy", "fmt", "nextest"]

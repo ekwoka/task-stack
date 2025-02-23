@@ -8,6 +8,8 @@ pub mod ui;
 pub use tasks::{Task, TaskStack};
 
 use tauri::{path::BaseDirectory, Manager};
+
+#[cfg(desktop)]
 use tauri_plugin_window_state::StateFlags;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
