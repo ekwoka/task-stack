@@ -43,7 +43,7 @@ pub fn run() {
                     handle.manage(task_stack);
                     Ok::<(), Box<dyn std::error::Error>>(())
                 } else {
-                    let id = database::create_list(&db, "First list")
+                    let id = database::create_list(&db, "Initial List")
                         .await
                         .expect("List to be created");
                     let task_stack = TaskStack::new(db, id);

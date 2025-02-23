@@ -1,5 +1,6 @@
 use crate::database;
 use chrono::{DateTime, Utc};
+use libsql::{de::from_row, params};
 use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
@@ -57,6 +58,13 @@ impl Task {
         self.state = TaskState::Completed;
         self.completed_at = Some(Utc::now());
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TaskList {
+    pub id: Ulid,
+    pub name: String,
+    pub created_at: DateTime<Utc>,
 }
 
 pub struct TaskStack {
@@ -126,13 +134,9 @@ impl TaskStack {
     }
 
     pub async fn first_active(&self) -> Result<Option<Task>, String> {
-        let tasks = database::get_all_tasks(&self.db, &self.get_list_id())
+        database::get_first_active_task(&self.db, &self.get_list_id())
             .await
-            .map_err(|e| e.to_string())?;
-        Ok(tasks
-            .iter()
-            .find(|(task, _)| task.state == TaskState::Active)
-            .map(|(task, _)| task.clone()))
+            .map_err(|e| e.to_string())
     }
 
     pub async fn size(&self) -> Result<usize, String> {
@@ -175,11 +179,12 @@ impl TaskStack {
     }
 
     pub async fn move_to_end(&self, id: Ulid) -> Result<(), String> {
-        let tasks = database::get_all_tasks(&self.db, &self.get_list_id())
+        let new_position = database::get_highest_position(&self.db, &self.get_list_id())
             .await
-            .map_err(|e| e.to_string())?;
+            .unwrap_or_default()
+            + 1;
 
-        let new_position = tasks.iter().map(|(_, pos)| pos).max().unwrap_or(&0) + 1;
+        println!("Moving task {id:?} to new position: {new_position:?}");
 
         database::update_task_position(&self.db, &id, new_position)
             .await
@@ -212,5 +217,36 @@ impl TaskStack {
             .find(|(task, _)| task.id == *id)
             .map(|(task, _)| task)
             .ok_or_else(|| "Task not found".to_string())
+    }
+
+    pub async fn get_lists(&self) -> Result<Vec<TaskList>, String> {
+        let conn = self.db.connect().map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, name, created_at
+                 FROM tasklists
+                 ORDER BY created_at DESC",
+            )
+            .await
+            .inspect_err(|e| println!("Failed to prepare statement: {}", e))
+            .map_err(|e| e.to_string())?;
+        let mut rows = stmt
+            .query(params![])
+            .await
+            .map_err(|e| e.to_string())
+            .inspect_err(|e| println!("Failed to query: {}", e))?;
+        let mut lists = Vec::new();
+        while let Some(row) = rows
+            .next()
+            .await
+            .map_err(|e| e.to_string())
+            .inspect_err(|e| println!("Failed to get next: {}", e))?
+        {
+            let task_list: TaskList = from_row(&row).map_err(|e| e.to_string())?;
+
+            println!("Got task list: {task_list:?}");
+            lists.push(task_list);
+        }
+        Ok(lists)
     }
 }

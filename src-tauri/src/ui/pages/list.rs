@@ -13,7 +13,7 @@ pub async fn render(stack: &TaskStack) -> Node {
                     <h1 class="text-4xl font-bold text-gray-900">{ text!("All Tasks") }</h1>
                     <p class="mt-2 text-gray-600">{ text!("View and manage all your tasks") }</p>
                 </header>
-                { navigation::buttons("list") }
+                { navigation::navigation("list", stack).await }
                 <main>
                     <div class="bg-white rounded-xl shadow-sm p-6">
                         <div class="space-y-4">
