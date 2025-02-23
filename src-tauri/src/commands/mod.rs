@@ -90,26 +90,29 @@ pub async fn switch_list(
 ) -> Result<PageResponse, String> {
     if list_id == "new" {
         let new_list_form = html! {
-            <form
-                class="flex gap-2 w-full max-w-xs"
-                data-command="create_list"
-                data-trigger="submit"
-                data-payload="{ name: $event.target.name.value }"
-            >
-                <input
-                    type="text"
-                    name="name"
-                    placeholder="List name"
-                    class="block flex-1 bg-white border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required=""
-                />
-                <button
-                    type="submit"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            <div class="relative flex items-center">
+                <form
+                    class="flex items-center gap-2"
+                    data-command="create_list"
+                    data-trigger="submit"
+                    data-payload="{ name: $event.target.name.value }"
                 >
-                    { text!("Create") }
-                </button>
-            </form>
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="New list name"
+                        class="appearance-none bg-transparent text-gray-600 text-sm pr-6 focus:outline-none cursor-text"
+                        required=""
+                        autofocus=""
+                    />
+                    <button
+                        type="submit"
+                        class="text-sm text-gray-400 hover:text-gray-900 transition-colors"
+                    >
+                        { text!("✓") }
+                    </button>
+                </form>
+            </div>
         };
         Ok(PageResponse::new(DomUpdate::from(
             new_list_form,
