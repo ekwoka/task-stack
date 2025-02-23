@@ -34,7 +34,6 @@ jobs:
           run_install: false
 
       - name: Install Global Crates
-        if: matrix.platform != 'windows-latest'
         env:
           BINSTALL_NO_DISCOVER_GITHUB_TOKEN: 'true'
         run: |
