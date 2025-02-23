@@ -1,13 +1,13 @@
 use crate::tasks::TaskStack;
 use crate::types::{DomUpdate, PageResponse};
-use crate::ui::pages::{index, list};
+use crate::ui::pages;
 use tauri::State;
 use ulid::Ulid;
 
 #[tauri::command]
 pub async fn index(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        index::render(&stack).await,
+        pages::index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -32,7 +32,7 @@ pub async fn add_task(
 ) -> Result<PageResponse, String> {
     stack.push(title, description).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        index::render(&stack).await,
+        pages::index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -54,7 +54,7 @@ pub async fn complete_task(
     })?;
     println!("Task completed successfully");
     Ok(PageResponse::new(DomUpdate::from(
-        index::render(&stack).await,
+        pages::index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -67,7 +67,7 @@ pub async fn move_task_to_end(
 ) -> Result<PageResponse, String> {
     stack.move_to_end(id).await?;
     Ok(PageResponse::new(DomUpdate::from(
-        index::render(&stack).await,
+        pages::index::render(&stack).await,
         "#app",
         "replace",
     )))
@@ -76,7 +76,25 @@ pub async fn move_task_to_end(
 #[tauri::command]
 pub async fn list(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
     Ok(PageResponse::new(DomUpdate::from(
-        list::render(&stack).await,
+        pages::list::render(&stack).await,
+        "#app",
+        "replace",
+    )))
+}
+
+#[tauri::command]
+pub async fn switch_list(
+    state: State<'_, TaskStack>,
+    list_id: String,
+) -> Result<PageResponse, String> {
+    let id = if list_id == "new" {
+        state.create_new_list("New List").await?
+    } else {
+        list_id.parse::<Ulid>().map_err(|e| e.to_string())?
+    };
+    state.set_list_id(id);
+    Ok(PageResponse::new(DomUpdate::from(
+        pages::index::render(&state).await,
         "#app",
         "replace",
     )))

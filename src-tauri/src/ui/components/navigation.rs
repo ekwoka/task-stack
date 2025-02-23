@@ -19,16 +19,26 @@ pub async fn navigation(current_view: &str, stack: &TaskStack) -> Node {
                             class="block w-full max-w-xs bg-white border border-gray-300 rounded-lg py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             data-command="switch_list"
                             data-trigger="change"
+                            data-payload="{ listId: $event.target.value }"
                         >
                             {
                                 lists.into_iter().map(|list| {
-                                    html! {
-                                        <option value={list.id.to_string()} selected={list.id == current_list_id}>
-                                            { text!("{}", list.name) }
-                                        </option>
+                                    if list.id == current_list_id {
+                                        html! {
+                                            <option value={list.id.to_string()} selected="">
+                                                { text!("{}", list.name) }
+                                            </option>
+                                        }
+                                    } else {
+                                        html! {
+                                            <option value={list.id.to_string()}>
+                                                { text!("{}", list.name) }
+                                            </option>
+                                        }
                                     }
                                 }).collect::<Vec<_>>()
                             }
+                            <option value="new">{ text!("New List +") }</option>
                         </select>
                     </div>
                     <div class="flex justify-center space-x-4">

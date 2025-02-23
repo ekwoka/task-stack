@@ -88,6 +88,10 @@ impl TaskStack {
         *self.list_id.lock().unwrap() = list_id
     }
 
+    pub fn get_db(&self) -> &libsql::Database {
+        &self.db
+    }
+
     pub async fn push(&self, title: String, description: Option<String>) -> Result<(), String> {
         let task = Task {
             id: Ulid::new(),
@@ -248,5 +252,11 @@ impl TaskStack {
             lists.push(task_list);
         }
         Ok(lists)
+    }
+
+    pub async fn create_new_list(&self, name: &str) -> Result<Ulid, String> {
+        database::create_list(&self.db, name)
+            .await
+            .map_err(|e| e.to_string())
     }
 }
