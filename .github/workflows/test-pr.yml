@@ -50,4 +50,4 @@ jobs:
         if: matrix.platform != 'windows-latest'
         env:
           BINSTALL_NO_DISCOVER_GITHUB_TOKEN: 'true'
-        run: cargo make build-desktop
+        run: cargo make build

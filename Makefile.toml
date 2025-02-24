@@ -10,7 +10,7 @@ script = "cargo watch -x clippy -x 'fmt --all' -x 'make nextest'"
 
 [tasks.nextest]
 command = "cargo"
-args = ["nextest", "--no-tests", "pass"]
+args = ["nextest", "run", "--no-tests", "pass"]
 
 [tasks.fmt]
 command = "cargo"
@@ -45,7 +45,7 @@ dependencies = ["clippy", "fmt", "nextest"]
 
 [tasks.build]
 command = "cargo"
-args = ["tauri", "build"]
+args = ["tauri", "build", "--no-bundle"]
 dependencies = ["pnpm"]
 
 [tasks.desktop]
@@ -60,7 +60,7 @@ dependencies = ["clippy", "fmt", "nextest"]
 
 [tasks.build-android]
 command = "cargo"
-args = ["tauri", "android", "build"]
+args = ["tauri", "android", "build", "--no-bundle"]
 dependencies = ["pnpm"]
 
 [tasks.android]
@@ -75,7 +75,7 @@ dependencies = ["clippy", "fmt", "nextest"]
 
 [tasks.build-ios]
 command = "cargo"
-args = ["tauri", "ios", "build"]
+args = ["tauri", "ios", "build", "--no-bundle"]
 dependencies = ["pnpm"]
 
 [tasks.ios]
