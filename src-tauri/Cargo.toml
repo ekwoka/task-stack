@@ -17,25 +17,10 @@ chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3.31"
 html-node = { version = "0.5.0", features = ["pretty"] }
 libsql = "0.6.0"
-ron = "0.8.1"
 serde = { version = "1.0.218", features = ["derive"] }
 serde_json = "1.0.139"
 tauri = { version = "2.2.5", features = ["unstable"] }
-tauri-plugin-fs = "2.2.0"
-tauri-plugin-http = "2.3.0"
-tauri-plugin-opener = "2"
-tauri-plugin-shell = "2.2.0"
 ulid = { version = "1.2.0", features = ["serde"] }
-
-[profile.dev]
-incremental = true # Compile your binary in smaller steps.
-
-[profile.release]
-codegen-units = 1 # Allows LLVM to perform better optimization.
-lto = true        # Enables link-time-optimizations.
-opt-level = "z"   # Prioritizes small binary size. Use `3` if you prefer speed.
-panic = "abort"   # Higher performance by disabling panic handlers.
-strip = true      # Ensures debug symbols are removed.
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-window-state = "2"

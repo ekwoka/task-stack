@@ -70,11 +70,15 @@ const commandHandler = async (event: Event) => {
 }
 
 // Initialize directives for a specific root element
-function initDirectivesForRoot(root: Element | Document) {
+function initDirectivesForRoot(root: HTMLElement | Document) {
   console.log('initializing directives for root', root);
   directives.forEach((handler, name) =>
-    root.querySelectorAll(`[data-${name}]`).forEach((el) =>
-      handler(el as HTMLElement)));
+    {
+      if (root instanceof HTMLElement &&root.matches(`[data-${name}]`))
+        handler(root)
+      root.querySelectorAll(`[data-${name}]`).forEach((el) =>
+      handler(el as HTMLElement))
+    });
 }
 
 // Initialize directives and set up mutation observer
@@ -89,7 +93,7 @@ export function initDirectives() {
     mutations.forEach((mutation) => {
       // Handle added nodes
       mutation.addedNodes.forEach((node) => {
-        if (node instanceof Element) {
+        if (node instanceof HTMLElement) {
           initDirectivesForRoot(node);
         }
       });

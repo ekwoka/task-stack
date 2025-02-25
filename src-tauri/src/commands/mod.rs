@@ -1,6 +1,7 @@
 use crate::tasks::TaskStack;
 use crate::types::{DomUpdate, PageResponse};
 use crate::ui::pages;
+use html_node::{html, text};
 use tauri::State;
 use ulid::Ulid;
 
@@ -87,11 +88,54 @@ pub async fn switch_list(
     state: State<'_, TaskStack>,
     list_id: String,
 ) -> Result<PageResponse, String> {
-    let id = if list_id == "new" {
-        state.create_new_list("New List").await?
+    if list_id == "new" {
+        let new_list_form = html! {
+            <div class="relative flex items-center">
+                <form
+                    class="flex items-center gap-2"
+                    data-command="create_list"
+                    data-trigger="submit"
+                    data-payload="{ name: $event.target.name.value }"
+                >
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="New list name"
+                        class="appearance-none bg-transparent text-gray-600 text-sm pr-6 focus:outline-none cursor-text"
+                        required=""
+                        autofocus=""
+                    />
+                    <button
+                        type="submit"
+                        class="text-sm text-gray-400 hover:text-gray-900 transition-colors"
+                    >
+                        { text!("✓") }
+                    </button>
+                </form>
+            </div>
+        };
+        Ok(PageResponse::new(DomUpdate::from(
+            new_list_form,
+            "#list-selector",
+            "replace",
+        )))
     } else {
-        list_id.parse::<Ulid>().map_err(|e| e.to_string())?
-    };
+        let id = list_id.parse::<Ulid>().map_err(|e| e.to_string())?;
+        state.set_list_id(id);
+        Ok(PageResponse::new(DomUpdate::from(
+            pages::index::render(&state).await,
+            "#app",
+            "replace",
+        )))
+    }
+}
+
+#[tauri::command]
+pub async fn create_list(
+    state: State<'_, TaskStack>,
+    name: String,
+) -> Result<PageResponse, String> {
+    let id = state.create_new_list(&name).await?;
     state.set_list_id(id);
     Ok(PageResponse::new(DomUpdate::from(
         pages::index::render(&state).await,

@@ -69,6 +69,7 @@ pub fn run() {
             commands::move_task_to_end,
             commands::set_list_id,
             commands::get_list_id,
+            commands::create_list,
             commands::switch_list,
         ])
         .run(tauri::generate_context!())
