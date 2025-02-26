@@ -15,7 +15,7 @@ strip = true      # Ensures debug symbols are removed.
 [workspace.metadata.bin]
 cargo-edit = { version = "0.13.1", bins = ["cargo-add", "cargo-rm", "cargo-upgrade"]}
 cargo-make = { version = "0.37.24" }
-cargo-nextest = { version = "0.9.91" }
+cargo-nextest = { version = "0.9.92" }
 cargo-udeps = { version = "0.1.55" }
 cargo-watch = { version = "8.5.3" }
-tauri-cli = { version = "2.2.7", bins = ["cargo-tauri"] }
+tauri-cli = { version = "2.3.0", bins = ["cargo-tauri"] }

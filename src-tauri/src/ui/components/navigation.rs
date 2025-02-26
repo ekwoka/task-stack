@@ -31,6 +31,15 @@ pub async fn navigation(current_view: &str, stack: &TaskStack) -> Node {
                 >
                     { text!("All") }
                 </button>
+                <button
+                    class={format!("cursor-pointer text-gray-600 hover:text-gray-900 transition-colors {}",
+                        if current_view == "lists" { "text-blue-500" } else { "" }
+                    )}
+                    data-command="lists"
+                    data-trigger="click"
+                >
+                    { text!("Lists") }
+                </button>
             </div>
             <div id="list-selector" class="relative flex items-center">
                 <select

@@ -64,6 +64,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::index,
             commands::list,
+            commands::lists,
             commands::add_task,
             commands::complete_task,
             commands::move_task_to_end,

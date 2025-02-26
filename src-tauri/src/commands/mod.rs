@@ -143,3 +143,12 @@ pub async fn create_list(
         "replace",
     )))
 }
+
+#[tauri::command]
+pub async fn lists(stack: State<'_, TaskStack>) -> Result<PageResponse, String> {
+    Ok(PageResponse::new(DomUpdate::from(
+        pages::lists::render(&stack).await,
+        "#app",
+        "replace",
+    )))
+}
