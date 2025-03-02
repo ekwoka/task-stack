@@ -26,7 +26,7 @@ pub async fn render(stack: &TaskStack) -> Node {
                                             {
                                               let task_nodes: Vec<Node> = futures::future::join_all(tasks.iter()
                                                 .enumerate()
-                                                  .map(|(i, task)| task::card(i+1, task, stack))).await;
+                                                  .map(|(i, task)| task::card(i+1, task, stack, false))).await;
                                               task_nodes
                                             }
                                         </div>

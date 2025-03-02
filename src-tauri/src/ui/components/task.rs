@@ -1,7 +1,7 @@
 use crate::tasks::{Task, TaskStack, TaskState};
 use html_node::{html, text, Node};
 
-pub async fn card(current_pos: usize, task: &Task, stack: &TaskStack) -> Node {
+pub async fn card(current_pos: usize, task: &Task, stack: &TaskStack, show_stack: bool) -> Node {
     let total_tasks = stack.size().await.unwrap_or(0);
     let remaining_tasks = if task.state == TaskState::Active {
         total_tasks.saturating_sub(current_pos)
@@ -12,14 +12,18 @@ pub async fn card(current_pos: usize, task: &Task, stack: &TaskStack) -> Node {
     html! {
       <div class="relative">
           {
-              (1..=3.min(remaining_tasks)).rev().map(|i| {
-                  let offset = i * 8;
-                  let width_adjustment = i * 4;
-                  html! {
-                      <div class="absolute bg-white rounded-lg border border-gray-200 h-16 shadow-sm"
-                        style={format!("bottom: -{offset}px; left: {width_adjustment}px; right: {width_adjustment}px;")}></div>
-                  }
-              }).collect::<Vec<_>>()
+              if show_stack {
+                  (1..=3.min(remaining_tasks)).rev().map(|i| {
+                      let offset = i * 8;
+                      let width_adjustment = i * 4;
+                      html! {
+                          <div class="absolute bg-white rounded-lg border border-gray-200 h-16 shadow-sm"
+                            style={format!("bottom: -{offset}px; left: {width_adjustment}px; right: {width_adjustment}px;")}></div>
+                      }
+                  }).collect::<Vec<_>>()
+              } else {
+                  vec![]
+              }
           }
           <div class="bg-white rounded-lg p-6 relative border border-gray-200 shadow-sm">
               <div class="flex justify-between items-start mb-2">

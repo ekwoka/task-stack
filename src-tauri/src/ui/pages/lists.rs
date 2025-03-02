@@ -1,7 +1,4 @@
-use crate::{
-    tasks::TaskStack,
-    ui::components::navigation,
-};
+use crate::{tasks::TaskStack, ui::components::navigation};
 use html_node::{html, text, Node};
 use std::collections::HashMap;
 use ulid::Ulid;
@@ -19,9 +16,10 @@ pub async fn render(stack: &TaskStack) -> Node {
     // Get active task counts for all lists
     if let Ok(conn) = db.connect() {
         // Query for active tasks
-        if let Ok(mut stmt) = conn.prepare(
-            "SELECT list_id, COUNT(*) FROM tasks WHERE state = 'Active' GROUP BY list_id"
-        ).await {
+        if let Ok(mut stmt) = conn
+            .prepare("SELECT list_id, COUNT(*) FROM tasks WHERE state = 'Active' GROUP BY list_id")
+            .await
+        {
             if let Ok(mut rows) = stmt.query(libsql::params![]).await {
                 while let Ok(Some(row)) = rows.next().await {
                     let list_id_str: Result<String, _> = row.get(0);
@@ -37,9 +35,10 @@ pub async fn render(stack: &TaskStack) -> Node {
         }
 
         // Query for total tasks
-        if let Ok(mut stmt) = conn.prepare(
-            "SELECT list_id, COUNT(*) FROM tasks GROUP BY list_id"
-        ).await {
+        if let Ok(mut stmt) = conn
+            .prepare("SELECT list_id, COUNT(*) FROM tasks GROUP BY list_id")
+            .await
+        {
             if let Ok(mut rows) = stmt.query(libsql::params![]).await {
                 while let Ok(Some(row)) = rows.next().await {
                     let list_id_str: Result<String, _> = row.get(0);
@@ -104,7 +103,7 @@ pub async fn render(stack: &TaskStack) -> Node {
                                                             </div>
                                                             <div class="mt-4">
                                                                 <button
-                                                                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
                                                                     data-command="switch_list"
                                                                     data-trigger="click"
                                                                     data-payload={{ format!("{{ listId: '{}' }}", list.id) }}

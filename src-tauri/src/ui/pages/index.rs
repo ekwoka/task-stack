@@ -27,7 +27,7 @@ pub async fn render(stack: &TaskStack) -> Node {
                         <div id="task-list" class="space-y-4">
                         {
                             if let Some(task) = task {
-                                task::card(current_pos, &task, stack).await
+                                task::card(current_pos, &task, stack, true).await
                             } else {
                                 task::empty()
                             }

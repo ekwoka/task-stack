@@ -18,4 +18,4 @@ cargo-make = { version = "0.37.24" }
 cargo-nextest = { version = "0.9.92" }
 cargo-udeps = { version = "0.1.55" }
 cargo-watch = { version = "8.5.3" }
-tauri-cli = { version = "2.3.0", bins = ["cargo-tauri"] }
+tauri-cli = { version = "2.3.1", bins = ["cargo-tauri"] }
