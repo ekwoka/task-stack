@@ -36,11 +36,35 @@ pub fn run() {
                 let db = database::init_database(&db_path)
                     .await
                     .expect("DB to be initialized");
-                let binding = database::get_lists(&db)
+
+                // Try to get the saved list ID first
+                let saved_list_id = database::get_selected_list_id(&db).await.ok().flatten();
+
+                // Check if we have a saved list ID that we can use
+                if let Some(id) = saved_list_id {
+                    // Make sure the list still exists in the DB
+                    let lists = database::get_lists(&db)
+                        .await
+                        .expect("DB Should be queryable");
+                    if lists.contains(&id) {
+                        println!("Using saved list ID: {}", id);
+                        let task_stack = TaskStack::new(db, id);
+                        handle.manage(task_stack);
+                        return Ok::<(), Box<dyn std::error::Error>>(());
+                    }
+                }
+
+                // Fall back to the first available list or create a new one
+                let lists = database::get_lists(&db)
                     .await
                     .expect("DB Should be queryable");
-                let list_id = binding.first();
+                let list_id = lists.first();
                 if let Some(id) = list_id {
+                    // Save this list ID as selected
+                    if let Err(e) = database::save_selected_list_id(&db, id).await {
+                        println!("Failed to save selected list ID: {}", e);
+                    }
+
                     let task_stack = TaskStack::new(db, *id);
                     handle.manage(task_stack);
                     Ok::<(), Box<dyn std::error::Error>>(())
@@ -48,6 +72,12 @@ pub fn run() {
                     let id = database::create_list(&db, "Initial List")
                         .await
                         .expect("List to be created");
+
+                    // Save this list ID as selected
+                    if let Err(e) = database::save_selected_list_id(&db, &id).await {
+                        println!("Failed to save selected list ID: {}", e);
+                    }
+
                     let task_stack = TaskStack::new(db, id);
                     handle.manage(task_stack);
                     Ok::<(), Box<dyn std::error::Error>>(())

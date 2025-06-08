@@ -122,6 +122,13 @@ pub async fn switch_list(
     } else {
         let id = list_id.parse::<Ulid>().map_err(|e| e.to_string())?;
         state.set_list_id(id);
+
+        // Persist the selected list ID
+        let db = state.get_db();
+        if let Err(e) = crate::database::save_selected_list_id(&db, &id).await {
+            println!("Failed to save selected list ID: {}", e);
+        }
+
         Ok(PageResponse::new(DomUpdate::from(
             pages::index::render(&state).await,
             "#app",

@@ -34,6 +34,14 @@ pub async fn init_database(db_path: &Path) -> Result<Database, libsql::Error> {
         params![],
     )
     .await?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )",
+        params![],
+    )
+    .await?;
 
     Ok(db)
 }
@@ -264,4 +272,34 @@ pub async fn get_highest_position(db: &Database, list_id: &Ulid) -> Result<i64, 
         position = max_position;
     }
     Ok(position.unwrap_or(0))
+}
+
+pub async fn save_selected_list_id(db: &Database, list_id: &Ulid) -> Result<(), libsql::Error> {
+    let conn = db.connect()?;
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('selected_list_id', ?)",
+        params![list_id.to_string()],
+    )
+    .await?;
+    Ok(())
+}
+
+pub async fn get_selected_list_id(db: &Database) -> Result<Option<Ulid>, libsql::Error> {
+    let conn = db.connect()?;
+    let mut stmt = conn
+        .prepare("SELECT value FROM settings WHERE key = 'selected_list_id'")
+        .await?;
+    let mut rows = stmt.query(params![]).await?;
+
+    if let Some(row) = rows.next().await? {
+        let list_id: String = row.get(0)?;
+        match Ulid::from_string(&list_id) {
+            Ok(id) => return Ok(Some(id)),
+            Err(e) => {
+                println!("Failed to parse list ID: {}", e);
+                return Ok(None);
+            }
+        }
+    }
+    Ok(None)
 }

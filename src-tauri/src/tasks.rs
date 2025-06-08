@@ -68,14 +68,14 @@ pub struct TaskList {
 }
 
 pub struct TaskStack {
-    db: libsql::Database,
+    db: std::sync::Arc<libsql::Database>,
     list_id: std::sync::Mutex<Ulid>,
 }
 
 impl TaskStack {
     pub fn new(db: libsql::Database, list_id: Ulid) -> Self {
         Self {
-            db,
+            db: std::sync::Arc::new(db),
             list_id: std::sync::Mutex::new(list_id),
         }
     }
@@ -88,8 +88,8 @@ impl TaskStack {
         *self.list_id.lock().unwrap() = list_id
     }
 
-    pub fn get_db(&self) -> &libsql::Database {
-        &self.db
+    pub fn get_db(&self) -> std::sync::Arc<libsql::Database> {
+        self.db.clone()
     }
 
     pub async fn push(&self, title: String, description: Option<String>) -> Result<(), String> {
