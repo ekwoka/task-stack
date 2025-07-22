@@ -44,13 +44,13 @@ pub async fn complete_task(
     stack: State<'_, TaskStack>,
     id: String,
 ) -> Result<PageResponse, String> {
-    println!("Completing task with ID: {}", id);
+    println!("Completing task with ID: {id}");
     let id = Ulid::from_string(&id).map_err(|e| {
-        println!("Failed to parse ID: {}", e);
+        println!("Failed to parse ID: {e}");
         e.to_string()
     })?;
     stack.complete_task(id).await.map_err(|e| {
-        println!("Failed to complete task: {}", e);
+        println!("Failed to complete task: {e}");
         e.to_string()
     })?;
     println!("Task completed successfully");
@@ -126,7 +126,7 @@ pub async fn switch_list(
         // Persist the selected list ID
         let db = state.get_db();
         if let Err(e) = crate::database::save_selected_list_id(&db, &id).await {
-            println!("Failed to save selected list ID: {}", e);
+            println!("Failed to save selected list ID: {e}");
         }
 
         Ok(PageResponse::new(DomUpdate::from(

@@ -6,9 +6,9 @@ pub async fn navigation(current_view: &str, stack: &TaskStack) -> Node {
     let lists = stack
         .get_lists()
         .await
-        .inspect_err(|e| println!("Failed to get lists: {}", e))
+        .inspect_err(|e| println!("Failed to get lists: {e}"))
         .unwrap_or_default();
-    println!("lists: {:?}", lists);
+    println!("lists: {lists:?}");
 
     html! {
         <nav class="flex items-center justify-between max-w-3xl mx-auto px-4">

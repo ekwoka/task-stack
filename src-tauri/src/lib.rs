@@ -47,7 +47,7 @@ pub fn run() {
                         .await
                         .expect("DB Should be queryable");
                     if lists.contains(&id) {
-                        println!("Using saved list ID: {}", id);
+                        println!("Using saved list ID: {id}");
                         let task_stack = TaskStack::new(db, id);
                         handle.manage(task_stack);
                         return Ok::<(), Box<dyn std::error::Error>>(());
@@ -62,7 +62,7 @@ pub fn run() {
                 if let Some(id) = list_id {
                     // Save this list ID as selected
                     if let Err(e) = database::save_selected_list_id(&db, id).await {
-                        println!("Failed to save selected list ID: {}", e);
+                        println!("Failed to save selected list ID: {e}");
                     }
 
                     let task_stack = TaskStack::new(db, *id);
@@ -75,7 +75,7 @@ pub fn run() {
 
                     // Save this list ID as selected
                     if let Err(e) = database::save_selected_list_id(&db, &id).await {
-                        println!("Failed to save selected list ID: {}", e);
+                        println!("Failed to save selected list ID: {e}");
                     }
 
                     let task_stack = TaskStack::new(db, id);

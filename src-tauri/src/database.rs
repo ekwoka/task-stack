@@ -7,7 +7,7 @@ use ulid::Ulid;
 pub async fn init_database(db_path: &Path) -> Result<Database, libsql::Error> {
     let db = Builder::new_local(db_path).build().await?;
 
-    println!("Initialized database at: {:?}", db_path);
+    println!("Initialized database at: {db_path:?}");
     println!("datetime format: {}", Utc::now().to_rfc3339());
     // Create tables if they don't exist
     let conn = db.connect()?;
@@ -189,17 +189,14 @@ pub async fn update_task_state(
     state: TaskState,
     completed_at: Option<DateTime<Utc>>,
 ) -> Result<(), libsql::Error> {
-    println!("Updating task state in database for ID: {}", id);
+    println!("Updating task state in database for ID: {id}");
     let conn = db.connect()?;
     let state_str = match state {
         TaskState::Active => "Active",
         TaskState::Completed => "Completed",
     };
     let completed_at_str = completed_at.map(|dt| dt.to_rfc3339());
-    println!(
-        "Setting state to {} and completed_at to {:?}",
-        state_str, completed_at_str
-    );
+    println!("Setting state to {state_str} and completed_at to {completed_at_str:?}");
     conn.execute(
         "UPDATE tasks
          SET state = ?, completed_at = ?
@@ -296,7 +293,7 @@ pub async fn get_selected_list_id(db: &Database) -> Result<Option<Ulid>, libsql:
         match Ulid::from_string(&list_id) {
             Ok(id) => return Ok(Some(id)),
             Err(e) => {
-                println!("Failed to parse list ID: {}", e);
+                println!("Failed to parse list ID: {e}");
                 return Ok(None);
             }
         }

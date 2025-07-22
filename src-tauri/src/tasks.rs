@@ -103,10 +103,10 @@ impl TaskStack {
             completed_at: None,
         };
 
-        let position = database::get_all_tasks(&self.db, &self.get_list_id())
+        let position = database::get_highest_position(&self.db, &self.get_list_id())
             .await
-            .map_err(|e| e.to_string())?
-            .len() as i64;
+            .unwrap_or_default()
+            + 1;
 
         database::insert_task(&self.db, &task, position)
             .await
@@ -232,19 +232,19 @@ impl TaskStack {
                  ORDER BY created_at DESC",
             )
             .await
-            .inspect_err(|e| println!("Failed to prepare statement: {}", e))
+            .inspect_err(|e| println!("Failed to prepare statement: {e}"))
             .map_err(|e| e.to_string())?;
         let mut rows = stmt
             .query(params![])
             .await
             .map_err(|e| e.to_string())
-            .inspect_err(|e| println!("Failed to query: {}", e))?;
+            .inspect_err(|e| println!("Failed to query: {e}"))?;
         let mut lists = Vec::new();
         while let Some(row) = rows
             .next()
             .await
             .map_err(|e| e.to_string())
-            .inspect_err(|e| println!("Failed to get next: {}", e))?
+            .inspect_err(|e| println!("Failed to get next: {e}"))?
         {
             let task_list: TaskList = from_row(&row).map_err(|e| e.to_string())?;
 
